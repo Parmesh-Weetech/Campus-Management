@@ -11,6 +11,7 @@ import { AdminModule } from './app/admin/admin.module';
 import { ProfessorModule } from './app/professor/professor.module';
 import { StudentModule } from './app/student/student.module';
 import { AuthModule } from './app/auth/auth.module';
+import { JwtModule } from './app/jwt/jwt.module';
 
 const envPath = path.resolve('.env');
 
@@ -36,7 +37,8 @@ const envPath = path.resolve('.env');
     AdminModule,
     ProfessorModule,
     StudentModule,
-    AuthModule
+    AuthModule,
+    JwtModule,
   ],
   controllers: [AppController],
   providers: [AppService],

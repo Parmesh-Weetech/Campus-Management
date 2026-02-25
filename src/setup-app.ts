@@ -8,6 +8,9 @@ import { MainSeeder } from "db/seeders/seeder";
 export const setupApp = async (app: INestApplication) => {
     const configService = app.get(ConfigService);
 
+    const globalPrefix = 'api';
+    app.setGlobalPrefix(globalPrefix, { exclude: ['u/:shortUrl'] });
+
     /* -------------------- DB SEEDING -------------------- */
     if (configService.get("AUTO_SEED")) {
         const dataSource = app.get(DataSource);
@@ -34,9 +37,6 @@ export const setupApp = async (app: INestApplication) => {
         preflightContinue: false,
         optionsSuccessStatus: 204,
     });
-
-    const globalPrefix = 'api';
-    app.setGlobalPrefix(globalPrefix, { exclude: ['u/:shortUrl'] });
 
     /* -------------------- SWAGGER -------------------- */
     if (!isProd()) {
