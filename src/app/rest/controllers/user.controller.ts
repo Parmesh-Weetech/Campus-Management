@@ -14,15 +14,15 @@ export class UserController {
         private readonly userService: UserService
     ) { }
     
-    @Role(AccessEntityEnum.USER, AccessActionEnum.CREATE)
     @Post('create/professor')
+    @Role(AccessEntityEnum.USER, AccessActionEnum.CREATE)
     @LogAround()
     async createProfessor(@Body() createUserReqDTO: CreateUserReqDTO): Promise<UserResDTO> {
         return await this.userService.createUser(createUserReqDTO, UserRole.PROFESSOR);
     }
 
-    @Role(AccessEntityEnum.USER, AccessActionEnum.CREATE)
     @Post('create/student')
+    @Role(AccessEntityEnum.USER, AccessActionEnum.CREATE)
     @LogAround()
     async createStudent(@Body() createUserReqDTO: CreateUserReqDTO): Promise<UserResDTO> {
         return await this.userService.createUser(createUserReqDTO, UserRole.STUDENT);

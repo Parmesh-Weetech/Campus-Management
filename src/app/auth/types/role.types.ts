@@ -1,4 +1,7 @@
+import { AccessActionEnum } from "src/app/common/enums/access-action.enum";
+import { AccessEntityEnum } from "src/app/common/enums/access-entitiy.enum";
+
 export type RoleMeta = {
-    entity: string;
-    action: string;
+    entity: AccessEntityEnum;
+    action: AccessActionEnum;
 }

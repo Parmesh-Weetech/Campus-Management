@@ -37,7 +37,10 @@ export class RoleGuard implements CanActivate {
             if (entity === AccessEntityEnum.USER && action === AccessActionEnum.VIEW) {
                 return true;
             }
-            return false;
+
+            throw new UnauthorizedException(
+                `You are not authorized to ${action} ${entity}`,
+            );
         }
 
         if (user.userRole === UserRole.STUDENT) {
@@ -47,7 +50,10 @@ export class RoleGuard implements CanActivate {
             if (entity === AccessEntityEnum.USER && action === AccessActionEnum.VIEW_OWN) {
                 return true;
             }
-            return false;
+
+            throw new UnauthorizedException(
+                `You are not authorized to ${action} ${entity}`,
+            );
         }
 
         throw new UnauthorizedException(
