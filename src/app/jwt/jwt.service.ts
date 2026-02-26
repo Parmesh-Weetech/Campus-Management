@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService, ConfigType } from '@nestjs/config';
 import { jwtConfig } from './jwt.config';
 import { JwtService as Jwt } from '@nestjs/jwt';
@@ -34,5 +34,15 @@ export class JwtService<T extends Object> {
         }, {
             expiresIn: this.config.refreshTokenExpireIn
         })
+    }
+
+    async validateAccessToken(accessToken: string): Promise<T> {
+        const payload = await this.jwtService.verify(accessToken);
+
+        if (payload.isRefreshToken) {
+            throw new UnauthorizedException({ message: "Invalid access token" });
+        }
+
+        return payload as T;
     }
 }

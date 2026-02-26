@@ -23,4 +23,20 @@ export class UserService {
             statusCode: 200
         };
     }
+
+    async findByIdOrThrow(userId: string): Promise<UserResDTO> {
+        const user = await this.userReaderService.findById(userId);
+
+        if (!user) {
+            throw new NotFoundException({ message: "User not found" });
+        }
+
+        return {
+            success: true,
+            expired: false,
+            data: user,
+            message: "User found.",
+            statusCode: 200
+        };
+    }
 }

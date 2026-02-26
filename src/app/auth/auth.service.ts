@@ -6,6 +6,7 @@ import { comparePasswords } from './helper/util';
 import { JwtService } from '../jwt/jwt.service';
 import { PayLoadType } from './types/payload.types';
 import { RefreshTokenService } from '../refresh-token/refresh-token.service';
+import { UserResDTO } from '../rest/dto/response/user-res.dto';
 
 @Injectable()
 export class AuthService {
@@ -45,4 +46,7 @@ export class AuthService {
         }
     }
 
+    async validateUser(userId: string): Promise<UserResDTO> {
+        return await this.userService.findByIdOrThrow(userId);
+    }
 }

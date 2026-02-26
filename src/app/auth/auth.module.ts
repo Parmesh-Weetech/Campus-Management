@@ -8,6 +8,7 @@ import { RefreshTokenModule } from '../refresh-token/refresh-token.module';
 @Module({
   providers: [AuthService],
   controllers: [AuthController],
-  imports: [JwtModule, UserModule, RefreshTokenModule]
+  imports: [JwtModule, UserModule, RefreshTokenModule],
+  exports: [AuthService]
 })
 export class AuthModule {}
