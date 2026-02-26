@@ -4,9 +4,13 @@ import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { ConfigService } from "@nestjs/config";
 import { DataSource } from "typeorm";
 import { MainSeeder } from "db/seeders/seeder";
+import { CustomExceptionFilter } from "./app/common/exception/custom-exception.filter";
 
 export const setupApp = async (app: INestApplication) => {
     const configService = app.get(ConfigService);
+
+    const globalPrefix = 'api';
+    app.setGlobalPrefix(globalPrefix, { exclude: ['u/:shortUrl'] });
 
     /* -------------------- DB SEEDING -------------------- */
     if (configService.get("AUTO_SEED")) {
@@ -27,6 +31,7 @@ export const setupApp = async (app: INestApplication) => {
             transform: true,
         }),
     );
+    app.useGlobalFilters(new CustomExceptionFilter());
 
     app.enableCors({
         origin: '*',
@@ -34,9 +39,6 @@ export const setupApp = async (app: INestApplication) => {
         preflightContinue: false,
         optionsSuccessStatus: 204,
     });
-
-    const globalPrefix = 'api';
-    app.setGlobalPrefix(globalPrefix, { exclude: ['u/:shortUrl'] });
 
     /* -------------------- SWAGGER -------------------- */
     if (!isProd()) {

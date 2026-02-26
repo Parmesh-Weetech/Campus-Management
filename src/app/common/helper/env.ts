@@ -1,3 +1,5 @@
+import { CustomExceptionFactory } from "../exception/custom-exception.factory";
+import { ErrorCode } from "../exception/error-code";
 import { PLATFORM_ENVIRONMENT, PlatformEnvironment } from "../types/platform.environment.type";
 
 // eslint-disable @typescript-eslint/no-namespace, @typescript-eslint/no-empty-object-type
@@ -30,9 +32,8 @@ export const isTest = () => {
 export const getEnvVal = (env: keyof EnvVar, defaultVal?: string): string => {
     const envVal = process.env[env] as string | undefined;
     if (defaultVal === undefined) {
-        if (!envVal) {
-            throw new Error(`${env} environment variable is not defined.`);
-        }
+        if (!envVal) throw CustomExceptionFactory.create(ErrorCode.ENVIRONMENT_VARIABLE_NOT_DEFINED);
+        
     }
     return (envVal ?? defaultVal) as string;
 };
@@ -44,10 +45,10 @@ export const getNumericEnvVal = (
     const envVal = process.env[env] as string | undefined;
     if (defaultVal === undefined) {
         if (envVal === undefined) {
-            throw new Error(`${env} environment variable is not defined.`);
+            throw CustomExceptionFactory.create(ErrorCode.ENVIRONMENT_VARIABLE_NOT_DEFINED);
         }
         if (isNaN(Number(envVal))) {
-            throw new Error(`${env} environment variable is not a number.`);
+            throw CustomExceptionFactory.create(ErrorCode.ENVIRONMENT_VARIABLE_NOT_DEFINED);
         }
     }
     return envVal ? Number(envVal) : defaultVal!;
