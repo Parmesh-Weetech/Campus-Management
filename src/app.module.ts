@@ -12,6 +12,7 @@ import { ProfessorModule } from './app/professor/professor.module';
 import { StudentModule } from './app/student/student.module';
 import { AuthModule } from './app/auth/auth.module';
 import { JwtModule } from './app/jwt/jwt.module';
+import { RefreshTokenModule } from './app/refresh-token/refresh-token.module';
 
 const envPath = path.resolve('.env');
 
@@ -39,6 +40,7 @@ const envPath = path.resolve('.env');
     StudentModule,
     AuthModule,
     JwtModule,
+    RefreshTokenModule
   ],
   controllers: [AppController],
   providers: [AppService],

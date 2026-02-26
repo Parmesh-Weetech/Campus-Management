@@ -1,18 +1,18 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { LoginReqDTO } from '../rest/dto/request/login-req.dto';
 import { LoginResDTO } from '../rest/dto/response/login-res.dto';
-import { InjectRepository } from '@nestjs/typeorm';
-import { User } from '../user/entities/user.entity';
 import { UserService } from '../user/user.service';
 import { comparePasswords } from './helper/util';
 import { JwtService } from '../jwt/jwt.service';
 import { PayLoadType } from './types/payload.types';
+import { RefreshTokenService } from '../refresh-token/refresh-token.service';
 
 @Injectable()
 export class AuthService {
     constructor(
         private readonly userService: UserService,
-        private readonly jwtService: JwtService<PayLoadType>
+        private readonly jwtService: JwtService<PayLoadType>,
+        private readonly refreshTokenService: RefreshTokenService
     ) { }
 
     async login(loginReqDTO: LoginReqDTO): Promise<LoginResDTO> {
@@ -31,6 +31,8 @@ export class AuthService {
         const accessToken = await this.jwtService.signAccessToken(payload);
         const refreshToken = await this.jwtService.signRefreshToken(payload);
 
+        await this.refreshTokenService.saveRefreshToken(refreshToken, existingUser.data.id);
+
         return {
             success: true,
             expired: false,
@@ -42,4 +44,5 @@ export class AuthService {
             statusCode: 200
         }
     }
+
 }

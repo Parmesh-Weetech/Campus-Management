@@ -11,8 +11,8 @@ import { LogAround } from '../../common/logger/log-around';
 export class AuthController {
 
     constructor(private readonly authService: AuthService) {}
-    @Post('login')
     @Public()
+    @Post('login')
     @LogAround()
     async login(@Body() loginReqDTO: LoginReqDTO): Promise<LoginResDTO> {
         return await this.authService.login(loginReqDTO)

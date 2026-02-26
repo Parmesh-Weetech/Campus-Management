@@ -21,7 +21,7 @@ export class JwtService<T extends Object> {
     async signAccessToken(payload: T): Promise<string> {
         const cleanPayload = this.omitExpAndIss(payload);
 
-        return this.jwtService.sign(payload, {
+        return this.jwtService.sign(cleanPayload, {
             expiresIn: this.config.accessTokenExpireIn
         });
     }
