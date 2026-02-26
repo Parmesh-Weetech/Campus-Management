@@ -1,3 +1,6 @@
+import { CustomExceptionFactory } from "src/app/common/exception/custom-exception.factory";
+import { ErrorCode } from "src/app/common/exception/error-code";
+
 export const convertIntoNumber = (value: string) => {
     return Number(value);
 }
@@ -10,6 +13,6 @@ export function convertToSeconds(time: string): number {
         case 'm': return value * 60;
         case 'h': return value * 3600;
         case 'd': return value * 86400;
-        default: throw new Error('Invalid time unit');
+        default: throw CustomExceptionFactory.create(ErrorCode.INVALID_TIME_UNIT)
     }
 }

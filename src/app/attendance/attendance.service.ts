@@ -8,12 +8,16 @@ import { User } from '../user/entities/user.entity';
 import { UserRole } from '../user/types/user-role';
 import { AttendanceListResDTO } from '../rest/dto/response/attendance-list-res.dto';
 import { AttendanceReaderService } from './attendance-reader.service';
+import { UserService } from '../user/user.service';
+import { CustomExceptionFactory } from '../common/exception/custom-exception.factory';
+import { ErrorCode } from '../common/exception/error-code';
 
 @Injectable()
 export class AttendanceService {
     constructor(
         private readonly attendanceWriterService: AttendanceWriterService,
-        private readonly attendanceReaderService: AttendanceReaderService
+        private readonly attendanceReaderService: AttendanceReaderService,
+        private readonly userService: UserService
     ) { }
 
     async createAttendance(
@@ -21,30 +25,22 @@ export class AttendanceService {
         studentId: string,
         currentUserId: string
     ): Promise<AttendanceResDTO> {
-        if (!studentId) {
-            throw new BadRequestException({ message: "studentId is required" });
-        }
+        if (!studentId) throw CustomExceptionFactory.create(ErrorCode.BAD_REQUEST, "Invalid studentId");
 
         if (!currentUserId) {
-            throw new BadRequestException({ message: "Current user not found in request" });
+            throw CustomExceptionFactory.create(ErrorCode.USER_NOT_IN_REQUEST, "Current user not found in request");
         }
 
-        // const [student, recordedBy] = await Promise.all([
-        //     this.userRepository.findOne({ where: { id: studentId } }),
-        //     this.userRepository.findOne({ where: { id: currentUserId } })
-        // ]);
+        const [student, recordedBy] = await Promise.all([
+            this.userService.findByIdOrThrow(studentId),
+            this.userService.findByIdOrThrow(currentUserId)
+        ]);
 
-        // if (!student) {
-        //     throw new NotFoundException({ message: "Student not found" });
-        // }
+        if (!student) throw CustomExceptionFactory.create(ErrorCode.USER_NOT_FOUND, "Student not found");
 
-        // if (student.userRole !== UserRole.STUDENT) {
-        //     throw new BadRequestException({ message: "Attendance can only be recorded for students" });
-        // }
+        if (student.data.userRole !== UserRole.STUDENT) throw CustomExceptionFactory.create(ErrorCode.BAD_REQUEST, "Attendance can only be recorded for students");
 
-        // if (!recordedBy) {
-        //     throw new NotFoundException({ message: "Recorder user not found" });
-        // }
+        if (!recordedBy) throw CustomExceptionFactory.create(ErrorCode.USER_NOT_FOUND)
 
         const existingAttendance = await this.attendanceReaderService.findByStudentDateClass(
             studentId,
@@ -52,9 +48,7 @@ export class AttendanceService {
             createAttendanceReqDTO.className
         );
 
-        if (existingAttendance) {
-            throw new BadRequestException({ message: "Attendance already exists for this student, class, and date" });
-        }
+        if (existingAttendance) throw CustomExceptionFactory.create(ErrorCode.ATTENDANCE_ALREADY_EXISTS, "Attendance already exists for this student, class, and date");
 
         const attendance = await this.attendanceWriterService.createAttendance(
             createAttendanceReqDTO,
@@ -62,7 +56,7 @@ export class AttendanceService {
             currentUserId
         );
 
-        if (!attendance) throw new InternalServerErrorException({ message: "Internal Server Error while creating attendance" });
+        if (!attendance) throw CustomExceptionFactory.create(ErrorCode.ATTENDANCE_CREATE_FAILED);
 
         return {
             success: true,
@@ -78,27 +72,19 @@ export class AttendanceService {
         attendanceId: string,
         currentUserId: string
     ): Promise<AttendanceResDTO> {
-        if (!attendanceId) {
-            throw new BadRequestException({ message: "attendanceId is required" });
-        }
+        if (!attendanceId) throw CustomExceptionFactory.create(ErrorCode.BAD_REQUEST, "attendanceId is required");
 
-        if (!currentUserId) {
-            throw new BadRequestException({ message: "Current user not found in request" });
-        }
+        if (!currentUserId) throw CustomExceptionFactory.create(ErrorCode.USER_NOT_IN_REQUEST);
 
         if (
             updateAttendanceReqDTO.date === undefined &&
             updateAttendanceReqDTO.status === undefined &&
             updateAttendanceReqDTO.className === undefined
-        ) {
-            throw new BadRequestException({ message: "At least one field is required to update attendance" });
-        }
+        ) throw CustomExceptionFactory.create(ErrorCode.ATTENDANCE_EMPTY_UPDATE_PAYLOAD);
 
         const existingAttendance = await this.attendanceReaderService.findByIdWithRelations(attendanceId);
 
-        if (!existingAttendance) {
-            throw new NotFoundException({ message: "Attendance not found" });
-        }
+        if (!existingAttendance) throw CustomExceptionFactory.create(ErrorCode.ATTENDANCE_NOT_FOUND);
 
         const nextDate = updateAttendanceReqDTO.date ?? existingAttendance.date;
         const nextClassName = updateAttendanceReqDTO.className ?? existingAttendance.className;
@@ -110,9 +96,7 @@ export class AttendanceService {
             nextClassName
         );
 
-        if (duplicateAttendance) {
-            throw new BadRequestException({ message: "Attendance already exists for this student, class, and date" });
-        }
+        if (duplicateAttendance) throw CustomExceptionFactory.create(ErrorCode.ATTENDANCE_ALREADY_EXISTS);
 
         const updatedAttendance = await this.attendanceWriterService.updateAttendance(
             existingAttendance,
@@ -120,7 +104,7 @@ export class AttendanceService {
             currentUserId
         );
 
-        if (!updatedAttendance) throw new InternalServerErrorException({ message: "Internal Server Error while updating record" });
+        if (!updatedAttendance) throw CustomExceptionFactory.create(ErrorCode.ATTENDANCE_UPDATE_FAILED);
 
         return {
             success: true,
@@ -143,9 +127,12 @@ export class AttendanceService {
                 ? currentUser.id
                 : listAttendanceReqDTO.studentId;
 
-        if (currentUser.userRole === UserRole.STUDENT && listAttendanceReqDTO.studentId && listAttendanceReqDTO.studentId !== currentUser.id) {
-            throw new BadRequestException({ message: "Students can only view your own attendance" });
-        }
+        if (
+            currentUser.userRole === UserRole.STUDENT &&
+            listAttendanceReqDTO.studentId &&
+            listAttendanceReqDTO.studentId !== currentUser.id
+        ) throw CustomExceptionFactory.create(ErrorCode.ATTENDANCE_STUDENT_SCOPE_VIOLATION);
+
 
         let monthStart: string | undefined;
         let monthEnd: string | undefined;
@@ -181,19 +168,13 @@ export class AttendanceService {
     }
 
     async deleteAttendance(attendanceId: string, currentUserId: string): Promise<AttendanceResDTO> {
-        if (!attendanceId) {
-            throw new BadRequestException({ message: "attendanceId is required" });
-        }
+        if (!attendanceId) throw CustomExceptionFactory.create(ErrorCode.BAD_REQUEST, "attendanceId is required");
 
-        if (!currentUserId) {
-            throw new BadRequestException({ message: "Current user not found in request" });
-        }
+        if (!currentUserId) throw CustomExceptionFactory.create(ErrorCode.USER_NOT_IN_REQUEST); 
 
         const existingAttendance = await this.attendanceWriterService.findByIdWithRelations(attendanceId);
 
-        if (!existingAttendance) {
-            throw new NotFoundException({ message: "Attendance not found" });
-        }
+        if (!existingAttendance) throw CustomExceptionFactory.create(ErrorCode.ATTENDANCE_NOT_FOUND);
 
         await this.attendanceWriterService.deleteAttendance(attendanceId);
 

@@ -14,7 +14,7 @@ export class UserWriterService {
         private readonly userRepository: Repository<User>
     ) { }
 
-    async createUser(createUserReqDTO: CreateUserReqDTO, hashPassword: string, role: UserRole.PROFESSOR | UserRole.STUDENT): Promise<UserResDTO> {
+    async createUser(createUserReqDTO: CreateUserReqDTO, hashPassword: string, role: UserRole.PROFESSOR | UserRole.STUDENT): Promise<User | null> {
         const createUser = await this.userRepository.save({
             name: createUserReqDTO.name,
             email: createUserReqDTO.email,
@@ -24,14 +24,6 @@ export class UserWriterService {
             userRole: role
         });
 
-        if (!createUser) throw new InternalServerErrorException({ message: "Internal Server Error while creating professor" });
-
-        return {
-            success: true,
-            data: createUser,
-            expired: false,
-            message: "Professor created successfully.",
-            statusCode: 201
-        }
+        return createUser ?? null;
     }
 }

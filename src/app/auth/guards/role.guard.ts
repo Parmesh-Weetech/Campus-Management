@@ -5,6 +5,8 @@ import { ROLE_KEY } from "../constants";
 import { AccessActionEnum } from "src/app/common/enums/access-action.enum";
 import { AccessEntityEnum } from "src/app/common/enums/access-entitiy.enum";
 import { UserRole } from "src/app/user/types/user-role";
+import { CustomExceptionFactory } from "src/app/common/exception/custom-exception.factory";
+import { ErrorCode } from "src/app/common/exception/error-code";
 
 @Injectable()
 export class RoleGuard implements CanActivate {
@@ -20,7 +22,7 @@ export class RoleGuard implements CanActivate {
         const request = context.switchToHttp().getRequest();
 
         const user = request.user;
-        if (!user) throw new UnauthorizedException("User not found in request");
+        if (!user) throw CustomExceptionFactory.create(ErrorCode.USER_NOT_IN_REQUEST);
 
         if (user.userRole === UserRole.ADMIN) {
             return true;
@@ -38,9 +40,7 @@ export class RoleGuard implements CanActivate {
                 return true;
             }
 
-            throw new UnauthorizedException(
-                `You are not authorized to ${action} ${entity}`,
-            );
+            throw CustomExceptionFactory.create(ErrorCode.ROLE_PERMISSION_DENIED, `You are not authorized to ${action} ${entity}`)
         }
 
         if (user.userRole === UserRole.STUDENT) {
@@ -51,13 +51,9 @@ export class RoleGuard implements CanActivate {
                 return true;
             }
 
-            throw new UnauthorizedException(
-                `You are not authorized to ${action} ${entity}`,
-            );
+            throw CustomExceptionFactory.create(ErrorCode.ROLE_PERMISSION_DENIED, `You are not authorized to ${action} ${entity}`)
         }
 
-        throw new UnauthorizedException(
-            `You are not authorized to ${action} ${entity}`,
-        );
+        throw CustomExceptionFactory.create(ErrorCode.ROLE_PERMISSION_DENIED, `You are not authorized to ${action} ${entity}`)
     }
 }

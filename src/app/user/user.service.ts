@@ -1,12 +1,12 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { UserResDTO } from '../rest/dto/response/user-res.dto';
 import { UserReaderService } from './user-reader.service';
 import { CreateUserReqDTO } from '../rest/dto/request/create-user-req.dto';
-import * as bcrypt from 'bcrypt';
-import { convertIntoNumber } from '../jwt/helper/util';
-import { getEnvVal } from '../common/helper';
 import { UserWriterService } from './user-writer.service';
 import { UserRole } from './types/user-role';
+import { CustomExceptionFactory } from '../common/exception/custom-exception.factory';
+import { ErrorCode } from '../common/exception/error-code';
+import { generateHashPassword } from '../auth/helper/util';
 
 @Injectable()
 export class UserService {
@@ -18,9 +18,7 @@ export class UserService {
     async findByEmailOrThrow(email: string): Promise<UserResDTO> {
         const user = await this.userReaderService.findByEmail(email);
 
-        if (!user) {
-            throw new NotFoundException({ message: "User not found" });
-        }
+        if (!user) throw CustomExceptionFactory.create(ErrorCode.USER_NOT_FOUND);
 
         return {
             success: true,
@@ -34,9 +32,7 @@ export class UserService {
     async findByIdOrThrow(userId: string): Promise<UserResDTO> {
         const user = await this.userReaderService.findById(userId);
 
-        if (!user) {
-            throw new NotFoundException({ message: "User not found" });
-        }
+        if (!user) throw CustomExceptionFactory.create(ErrorCode.USER_NOT_FOUND);
 
         return {
             success: true,
@@ -49,14 +45,23 @@ export class UserService {
 
     async createUser(createUserReqDTO: CreateUserReqDTO, role: UserRole.PROFESSOR | UserRole.STUDENT): Promise<UserResDTO> {
         const existingUserWithEmail = await this.userReaderService.findByEmail(createUserReqDTO.email);
-        if (existingUserWithEmail) throw new ConflictException({ message: "User already exists with this email!" });
+        if (existingUserWithEmail) throw CustomExceptionFactory.create(ErrorCode.USER_ALREADY_EXISTS_WITH_EMAIL);
 
         const existingUserWithPhone = await this.userReaderService.findByPhone(createUserReqDTO.phoneNumber);
-        if (existingUserWithPhone) throw new ConflictException({ message: "User already exists with this phone number!" });
+        if (existingUserWithPhone) throw CustomExceptionFactory.create(ErrorCode.USER_ALREADY_EXISTS_WITH_PHONE);
 
-        const genSalt = convertIntoNumber(getEnvVal("HASHING_SALT", '20'))
-        const hashPassword = await bcrypt.hash(createUserReqDTO.password, genSalt);
+        const hashPassword = await generateHashPassword(createUserReqDTO.password);
 
-        return await this.userWriterService.createUser(createUserReqDTO, hashPassword, role);
+        const createdUser = await this.userWriterService.createUser(createUserReqDTO, hashPassword, role);
+
+        if (!createdUser) throw CustomExceptionFactory.create(ErrorCode.INTERNAL_SERVER_ERROR);
+
+        return {
+            success: true,
+            expired: false,
+            data: createdUser,
+            message: "User created successfully.",
+            statusCode: 201
+        };
     }
 }

@@ -1,9 +1,8 @@
 import { Seeder } from 'typeorm-extension';
 import { DataSource } from 'typeorm';
 import { User } from '../../src/app/user/entities/user.entity';
-import * as bcrypt from 'bcrypt';
 import { UserStatus } from '../../src/app/user/types/user-status';
-import { getEnvVal } from 'src/app/common/helper';
+import { generateHashPassword } from 'src/app/auth/helper/util';
 
 declare global {
     interface EnvVar {
@@ -29,14 +28,13 @@ export class UserSeeder implements Seeder {
             return existingAdmin;
         }
 
-        const genSalt = getEnvVal("HASHING_SALT", '20');
-        const hashedPassword = await bcrypt.hash(adminPassword, Number(genSalt));
+        const hashPassword = await generateHashPassword(adminPassword);
 
         const adminUser = userRepo.create({
             name: adminName,
             email: adminEmail,
             phoneNumber: adminPhoneNumber,
-            password: hashedPassword,
+            password: hashPassword,
             status: adminStatus
         });
 

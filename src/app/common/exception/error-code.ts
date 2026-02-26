@@ -4,7 +4,11 @@ export enum ErrorCode {
     INVALID_UUID = 'request.invalid-uuid',
     INVALID_DATE_FORMAT = 'request.invalid-date-format',
     INVALID_MONTH_FORMAT = 'request.invalid-month-format',
+    INVALID_TIME_UNIT = 'request.invalid-time-unit',
     RESOURCE_NOT_FOUND = 'request.resource-not-found',
+
+    ENVIRONMENT_VARIABLE_NOT_DEFINED = 'config.environment-variable-not-defined',
+    INVALID_NODE_ENV = 'config.invalid-node-env',
 
     UNAUTHORIZED = 'auth.unauthorized',
     INVALID_CREDENTIALS = 'auth.invalid-credentials',

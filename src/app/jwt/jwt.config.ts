@@ -1,8 +1,7 @@
 import { registerAs } from "@nestjs/config"
 import { getEnvVal, isProd } from "../common/helper"
 import * as fs from 'fs';
-import { JwtSignOptions } from "@nestjs/jwt";
-import { convertIntoNumber, convertToSeconds } from "./helper/util";
+import { convertToSeconds } from "./helper/util";
 
 declare global {
     interface EnvVar {

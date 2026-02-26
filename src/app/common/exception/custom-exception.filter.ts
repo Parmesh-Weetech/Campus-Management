@@ -18,7 +18,6 @@ export class CustomExceptionFilter implements ExceptionFilter {
         response.status(status).json({
             success: false,
             expired: false,
-            statusCode: status,
             message,
             timestamp: new Date().toISOString(),
             path: request.url,

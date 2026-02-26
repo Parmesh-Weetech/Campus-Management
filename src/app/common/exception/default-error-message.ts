@@ -25,9 +25,21 @@ export const defaultErrorMessages: Record<
         message: 'Invalid month format',
         statusCode: 400,
     },
+    [ErrorCode.INVALID_TIME_UNIT]: {
+        message: 'Invalid time unit',
+        statusCode: 400,
+    },
     [ErrorCode.RESOURCE_NOT_FOUND]: {
         message: 'Resource not found',
         statusCode: 404,
+    },
+    [ErrorCode.ENVIRONMENT_VARIABLE_NOT_DEFINED]: {
+        message: 'Environment variable is not defined',
+        statusCode: 500,
+    },
+    [ErrorCode.INVALID_NODE_ENV]: {
+        message: 'Invalid NODE_ENV value',
+        statusCode: 500,
     },
     [ErrorCode.UNAUTHORIZED]: {
         message: 'Unauthorized',
@@ -46,7 +58,7 @@ export const defaultErrorMessages: Record<
         statusCode: 401,
     },
     [ErrorCode.AUTHORIZATION_HEADER_MISSING]: {
-        message: 'Authorization header missing',
+        message: 'You must be loggedIn!',
         statusCode: 401,
     },
     [ErrorCode.USER_NOT_IN_REQUEST]: {
@@ -58,7 +70,7 @@ export const defaultErrorMessages: Record<
         statusCode: 403,
     },
     [ErrorCode.ROLE_PERMISSION_DENIED]: {
-        message: 'Insufficient permissions',
+        message: 'You are not authorized to perform this action!',
         statusCode: 403,
     },
     [ErrorCode.USER_NOT_FOUND]: {

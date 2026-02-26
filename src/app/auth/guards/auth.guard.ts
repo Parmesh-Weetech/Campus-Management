@@ -4,6 +4,8 @@ import { IS_PUBLIC_ROUTE } from "../constants";
 import { JwtService } from "src/app/jwt/jwt.service";
 import { PayLoadType } from "../types/payload.types";
 import { AuthService } from "../auth.service";
+import { CustomExceptionFactory } from "src/app/common/exception/custom-exception.factory";
+import { ErrorCode } from "src/app/common/exception/error-code";
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -26,15 +28,11 @@ export class AuthGuard implements CanActivate {
 
         const authHeader = request.headers.authorization;
 
-        if (!authHeader) {
-            throw new UnauthorizedException('You must be loggedIn!');
-        }
+        if (!authHeader) throw CustomExceptionFactory.create(ErrorCode.AUTHORIZATION_HEADER_MISSING);
 
         const parts = authHeader.split(' ');
 
-        if (parts.length !== 2 || parts[0] !== 'Bearer') {
-            throw new UnauthorizedException('Invalid authorization format');
-        }
+        if (parts.length !== 2 || parts[0] !== 'Bearer') throw CustomExceptionFactory.create(ErrorCode.INVALID_AUTHORIZATION_FORMAT);
 
         const accessToken = parts[1];
 

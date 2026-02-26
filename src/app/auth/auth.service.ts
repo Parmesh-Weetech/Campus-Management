@@ -7,6 +7,8 @@ import { JwtService } from '../jwt/jwt.service';
 import { PayLoadType } from './types/payload.types';
 import { RefreshTokenService } from '../refresh-token/refresh-token.service';
 import { UserResDTO } from '../rest/dto/response/user-res.dto';
+import { CustomExceptionFactory } from '../common/exception/custom-exception.factory';
+import { ErrorCode } from '../common/exception/error-code';
 
 @Injectable()
 export class AuthService {
@@ -21,7 +23,7 @@ export class AuthService {
 
         const passwordMatch = await comparePasswords(loginReqDTO.password, existingUser.data.password);
 
-        if (!passwordMatch) throw new BadRequestException({ message: "Invalid Credentials!" });
+        if (!passwordMatch) throw CustomExceptionFactory.create(ErrorCode.INVALID_CREDENTIALS);
 
         const payload: PayLoadType = {
             userId: existingUser.data.id,
