@@ -144,7 +144,7 @@ export class AttendanceService {
                 : listAttendanceReqDTO.studentId;
 
         if (currentUser.userRole === UserRole.STUDENT && listAttendanceReqDTO.studentId && listAttendanceReqDTO.studentId !== currentUser.id) {
-            throw new BadRequestException({ message: "Students can only view their own attendance" });
+            throw new BadRequestException({ message: "Students can only view your own attendance" });
         }
 
         let monthStart: string | undefined;
