@@ -23,7 +23,7 @@ export class AttendanceController {
         return await this.attendanceService.createAttendance(createAttendanceReqDTO, studentId, user.id);
     }
 
-    @Patch(':attendanceId')
+    @Patch('update/:attendanceId')
     async updateAttendance(
         @Param('attendanceId', ParseUUIDPipe) attendanceId: string,
         @Body() updateAttendanceReqDTO: UpdateAttendanceReqDTO,

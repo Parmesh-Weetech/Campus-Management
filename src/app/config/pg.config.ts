@@ -2,6 +2,7 @@ import { DataSourceOptions } from "typeorm";
 import { User } from "../user/entities/user.entity";
 import { getEnvVal, getNumericEnvVal } from "../common/helper/env";
 import { Attendance } from "../attendance/entities/attendance.entity";
+import { RefreshToken } from "../refresh-token/entities/refresh-token.entity";
 
 declare global {
     interface EnvVar {
@@ -15,7 +16,8 @@ declare global {
 
 export const entities = {
     User,
-    Attendance
+    Attendance,
+    RefreshToken
 }
 
 export const postgresConfig = () => {
