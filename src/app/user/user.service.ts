@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { UserResDTO } from '../rest/dto/response/user-res.dto';
 import { UserReaderService } from './user-reader.service';
 import { CreateUserReqDTO } from '../rest/dto/request/create-user-req.dto';
@@ -48,7 +48,11 @@ export class UserService {
     }
 
     async createUser(createUserReqDTO: CreateUserReqDTO, role: UserRole.PROFESSOR | UserRole.STUDENT): Promise<UserResDTO> {
-        const existingUser = await this.findByEmailOrThrow(createUserReqDTO.email);
+        const existingUserWithEmail = await this.userReaderService.findByEmail(createUserReqDTO.email);
+        if (existingUserWithEmail) throw new ConflictException({ message: "User already exists with this email!" });
+
+        const existingUserWithPhone = await this.userReaderService.findByPhone(createUserReqDTO.phoneNumber);
+        if (existingUserWithPhone) throw new ConflictException({ message: "User already exists with this phone number!" });
 
         const genSalt = convertIntoNumber(getEnvVal("HASHING_SALT", '20'))
         const hashPassword = await bcrypt.hash(createUserReqDTO.password, genSalt);

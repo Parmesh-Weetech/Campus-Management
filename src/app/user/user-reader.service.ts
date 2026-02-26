@@ -17,4 +17,8 @@ export class UserReaderService {
     async findById(userId: string): Promise<User | null> {
         return await this.userRepository.findOne({ where: { id: userId } });
     }
+
+    async findByPhone(phoneNumber: string): Promise<User | null> {
+        return await this.userRepository.findOne({ where: { phoneNumber } });
+    }
 }
