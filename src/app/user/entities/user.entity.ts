@@ -1,7 +1,8 @@
-import { Column, Entity } from "typeorm";
+import { Column, Entity, OneToMany } from "typeorm";
 import { BaseEntity } from "../../../app/common/entity/base.entity";
 import { UserStatus } from "../types/user-status";
 import { UserRole } from "../types/user-role";
+import { Attendance } from "../../attendance/entities/attendance.entity";
 
 @Entity("user")
 export class User extends BaseEntity {
@@ -22,6 +23,9 @@ export class User extends BaseEntity {
 
     @Column({ type: 'enum', nullable: false, enum: UserRole, default: UserRole.ADMIN, name: "user_role" })
     userRole: UserRole;
+
+    @OneToMany(() => Attendance, attendance => attendance.student)
+    attendances: Attendance[];
 
     @Column({ nullable: true, name: "profile_picture" })
     profilePicture: string;
