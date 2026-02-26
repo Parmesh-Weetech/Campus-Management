@@ -4,6 +4,7 @@ import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { ConfigService } from "@nestjs/config";
 import { DataSource } from "typeorm";
 import { MainSeeder } from "db/seeders/seeder";
+import { CustomExceptionFilter } from "./app/common/exception/custom-exception.filter";
 
 export const setupApp = async (app: INestApplication) => {
     const configService = app.get(ConfigService);
@@ -30,6 +31,7 @@ export const setupApp = async (app: INestApplication) => {
             transform: true,
         }),
     );
+    app.useGlobalFilters(new CustomExceptionFilter());
 
     app.enableCors({
         origin: '*',
