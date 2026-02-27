@@ -1,11 +1,11 @@
-import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { ApiProperty } from "@nestjs/swagger";
 import { IsDateString, IsNotEmpty, IsOptional, IsString } from "class-validator";
 
 export class AttendanceByDateClassReqDTO {
     @IsOptional()
     @IsDateString()
-    @ApiPropertyOptional()
-    date?: string;
+    @ApiProperty()
+    date: string;
 
     @IsString()
     @IsNotEmpty()

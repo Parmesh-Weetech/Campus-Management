@@ -63,6 +63,8 @@ export class AttendanceController {
     @Role(UserRole.ADMIN, UserRole.PROFESSOR)
     @ApiResponse({ status: 200, type: AttendanceResDTO })
     @ApiParam({ name: 'studentId', type: String })
+    @ApiQuery({ name: 'date', required: true })
+    @ApiQuery({ name: 'className', required: true })
     async getAttendanceByDateAndClass(
         @Param('studentId', ParseUUIDPipe) studentId: string,
         @Query() query: AttendanceByDateClassReqDTO
