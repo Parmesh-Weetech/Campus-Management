@@ -7,6 +7,8 @@ import { UserRole } from './types/user-role';
 import { CustomExceptionFactory } from '../common/exception/custom-exception.factory';
 import { ErrorCode } from '../common/exception/error-code';
 import { generateHashPassword } from '../auth/helper/util';
+import { User } from './entities/user.entity';
+import { canViewTargetProfile } from './helper/util';
 
 @Injectable()
 export class UserService {
@@ -41,6 +43,16 @@ export class UserService {
             message: "User found.",
             statusCode: 200
         };
+    }
+
+    async findUserProfileDetails(userId: string, user: User): Promise<UserResDTO> {
+        const targetUser = await this.findByIdOrThrow(userId);
+
+        const canView = canViewTargetProfile(user, targetUser.data);
+
+        if (!canView) throw CustomExceptionFactory.create(ErrorCode.ROLE_PERMISSION_DENIED);
+
+        return targetUser;
     }
 
     async createUser(createUserReqDTO: CreateUserReqDTO, role: UserRole.PROFESSOR | UserRole.STUDENT): Promise<UserResDTO> {

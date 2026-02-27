@@ -167,10 +167,35 @@ export class AttendanceService {
         };
     }
 
+    async getAttendanceByStudentDateClass(studentId: string, date: string | undefined, className: string): Promise<AttendanceResDTO> {
+        if (!date) {
+            const newDate = new Date();
+            const year = newDate.getFullYear();
+            const month = String(newDate.getMonth() + 1).padStart(2, '0');
+            const day = String(newDate.getDate()).padStart(2, '0');
+
+            date = `${year}-${month}-${day}`;
+        }
+
+        if (!className) throw CustomExceptionFactory.create(ErrorCode.BAD_REQUEST, "ClassName is required");
+
+        const attendance = await this.attendanceReaderService.findByStudentDateClass(studentId, date, className);
+
+        if(!attendance) throw CustomExceptionFactory.create(ErrorCode.ATTENDANCE_NOT_FOUND);
+
+        return {
+            success: true,
+            expired: false,
+            data: attendance,
+            message: "Attendance Found.",
+            statusCode: 200
+        };
+    }
+
     async deleteAttendance(attendanceId: string, currentUserId: string): Promise<AttendanceResDTO> {
         if (!attendanceId) throw CustomExceptionFactory.create(ErrorCode.BAD_REQUEST, "attendanceId is required");
 
-        if (!currentUserId) throw CustomExceptionFactory.create(ErrorCode.USER_NOT_IN_REQUEST); 
+        if (!currentUserId) throw CustomExceptionFactory.create(ErrorCode.USER_NOT_IN_REQUEST);
 
         const existingAttendance = await this.attendanceWriterService.findByIdWithRelations(attendanceId);
 

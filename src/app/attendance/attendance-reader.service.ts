@@ -2,15 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Attendance } from "./entities/attendance.entity";
 import { Not, Repository } from "typeorm";
-
-type ListAttendanceQuery = {
-    page: number;
-    size: number;
-    studentId?: string;
-    className?: string;
-    monthStart?: string;
-    monthEnd?: string;
-};
+import { ListAttendanceQuery } from "./types/listAttendanceQuery.types";
 
 @Injectable()
 export class AttendanceReaderService {

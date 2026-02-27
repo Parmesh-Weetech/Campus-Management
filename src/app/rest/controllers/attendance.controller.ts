@@ -9,6 +9,7 @@ import { AttendanceListResDTO } from "../dto/response/attendance-list-res.dto";
 import { UpdateAttendanceReqDTO } from "../dto/request/update-attendance-req.dto";
 import { Role } from "src/app/auth/decorators/role.decorator";
 import { UserRole } from "src/app/user/types/user-role";
+import { GetAttendanceByDateClassReqDTO } from "../dto/request/get-attendance-by-date-class-req.dto";
 
 @Controller('attendance')
 export class AttendanceController {
@@ -37,12 +38,25 @@ export class AttendanceController {
     }
 
     @Get('list')
-    @Role(UserRole.ADMIN, UserRole.PROFESSOR, UserRole.STUDENT)
+    @Role(UserRole.ADMIN, UserRole.PROFESSOR)
     async listAttendance(
         @Body() listAttendanceReqDTO: ListAttendanceReqDTO,
         @GetCurrentUser() user: User
     ): Promise<AttendanceListResDTO> {
         return await this.attendanceService.listAttendance(listAttendanceReqDTO, user);
+    }
+
+    @Get(':studentId')
+    @Role(UserRole.ADMIN, UserRole.PROFESSOR)
+    async getAttendanceByDateAndClass(
+        @Param('studentId', ParseUUIDPipe) studentId: string,
+        @Query() query: GetAttendanceByDateClassReqDTO
+    ): Promise<AttendanceResDTO> {
+        return await this.attendanceService.getAttendanceByStudentDateClass(
+            studentId,
+            query.date,
+            query.className
+        );
     }
 
     @Delete(':attendanceId')
