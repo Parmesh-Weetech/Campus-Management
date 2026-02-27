@@ -9,6 +9,6 @@ export class RefreshToken extends BaseEntity {
     })
     user: User
 
-    @Column()
-    refresh_token: string
+    @Column({ name: "refreshToken" })
+    refreshToken: string
 }

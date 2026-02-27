@@ -1,10 +1,7 @@
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from "@nestjs/common";
+import { CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { RoleMeta } from "../types/role.types";
 import { ROLE_KEY } from "../constants";
-import { AccessActionEnum } from "src/app/common/enums/access-action.enum";
-import { AccessEntityEnum } from "src/app/common/enums/access-entitiy.enum";
-import { UserRole } from "src/app/user/types/user-role";
 import { CustomExceptionFactory } from "src/app/common/exception/custom-exception.factory";
 import { ErrorCode } from "src/app/common/exception/error-code";
 
@@ -15,45 +12,23 @@ export class RoleGuard implements CanActivate {
     ) { }
 
     canActivate(context: ExecutionContext): boolean {
-        const requiredRoles = this.reflector.get<RoleMeta>(ROLE_KEY, context.getHandler());
+        const requiredRoles = this.reflector.getAllAndOverride<RoleMeta>(ROLE_KEY, [
+            context.getHandler(),
+            context.getClass(),
+        ]);
 
-        if (!requiredRoles) return true;
+        if (!requiredRoles || requiredRoles.length === 0) return true;
 
         const request = context.switchToHttp().getRequest();
-
         const user = request.user;
-        if (!user) throw CustomExceptionFactory.create(ErrorCode.USER_NOT_IN_REQUEST);
-
-        if (user.userRole === UserRole.ADMIN) {
-            return true;
+        if (!user || !user.id || !user.userRole) {
+            throw CustomExceptionFactory.create(ErrorCode.USER_NOT_IN_REQUEST);
         }
 
-        const { entity, action } = requiredRoles;
-
-        if (user.userRole === UserRole.PROFESSOR) {
-            if (entity === AccessEntityEnum.ATTENDANCE &&
-                [AccessActionEnum.CREATE, AccessActionEnum.UPDATE, AccessActionEnum.DELETE, AccessActionEnum.VIEW].includes(action as AccessActionEnum)
-            ) {
-                return true;
-            }
-            if (entity === AccessEntityEnum.USER && action === AccessActionEnum.VIEW) {
-                return true;
-            }
-
-            throw CustomExceptionFactory.create(ErrorCode.ROLE_PERMISSION_DENIED, `You are not authorized to ${action} ${entity}`)
+        if (!requiredRoles.includes(user.userRole)) {
+            throw CustomExceptionFactory.create(ErrorCode.ROLE_PERMISSION_DENIED);
         }
 
-        if (user.userRole === UserRole.STUDENT) {
-            if (entity === AccessEntityEnum.ATTENDANCE && action === AccessActionEnum.VIEW) {
-                return true;
-            }
-            if (entity === AccessEntityEnum.USER && action === AccessActionEnum.VIEW_OWN) {
-                return true;
-            }
-
-            throw CustomExceptionFactory.create(ErrorCode.ROLE_PERMISSION_DENIED, `You are not authorized to ${action} ${entity}`)
-        }
-
-        throw CustomExceptionFactory.create(ErrorCode.ROLE_PERMISSION_DENIED, `You are not authorized to ${action} ${entity}`)
+        return true;
     }
 }

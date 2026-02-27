@@ -7,11 +7,11 @@ import { AttendanceStatus } from "../types/attendance-status.types";
 @Unique(['student', 'date', 'className'])
 export class Attendance extends BaseEntity {
     @ManyToOne(() => User, user => user.attendances, { nullable: false, onDelete: 'CASCADE' })
-    @JoinColumn({ name: 'student_id' })
+    @JoinColumn({ name: 'studentId' })
     student: User;
 
     @ManyToOne(() => User, { nullable: false })
-    @JoinColumn({ name: 'recorded_by_id' })
+    @JoinColumn({ name: 'recordedById' })
     recordedBy: User;
 
     @Column({ type: 'date', nullable: false })

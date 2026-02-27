@@ -13,7 +13,7 @@ export class User extends BaseEntity {
     @Column({ nullable: false, unique: true })
     email: string;
 
-    @Column({ nullable: false, name: "phone_number", unique: true })
+    @Column({ nullable: false, name: "phoneNumber", unique: true })
     phoneNumber: string;
 
     @Column({ nullable: false })
@@ -22,7 +22,7 @@ export class User extends BaseEntity {
     @Column({ type: 'enum', nullable: false, enum: UserStatus })
     status: UserStatus
 
-    @Column({ type: 'enum', nullable: false, enum: UserRole, default: UserRole.ADMIN, name: "user_role" })
+    @Column({ type: 'enum', nullable: false, enum: UserRole, default: UserRole.ADMIN, name: "userRole" })
     userRole: UserRole;
 
     @OneToMany(() => Attendance, attendance => attendance.student)
@@ -30,9 +30,9 @@ export class User extends BaseEntity {
     @OneToMany(() => RefreshToken, token => token.user)
     tokens: RefreshToken[]
 
-    @Column({ nullable: true, name: "profile_picture" })
+    @Column({ nullable: true, name: "profilePicture" })
     profilePicture: string;
 
-    @Column({ nullable: true, name: "profile_picture_thumbnail" })
+    @Column({ nullable: true, name: "profilePictureThumbnail" })
     profilePictureThumbnail: string;
 }

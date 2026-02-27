@@ -8,8 +8,7 @@ import { ListAttendanceReqDTO } from "../dto/request/list-attendance-req.dto";
 import { AttendanceListResDTO } from "../dto/response/attendance-list-res.dto";
 import { UpdateAttendanceReqDTO } from "../dto/request/update-attendance-req.dto";
 import { Role } from "src/app/auth/decorators/role.decorator";
-import { AccessEntityEnum } from "src/app/common/enums/access-entitiy.enum";
-import { AccessActionEnum } from "src/app/common/enums/access-action.enum";
+import { UserRole } from "src/app/user/types/user-role";
 
 @Controller('attendance')
 export class AttendanceController {
@@ -18,7 +17,7 @@ export class AttendanceController {
     ) { }
 
     @Post('create/:studentId')
-    @Role(AccessEntityEnum.ATTENDANCE, AccessActionEnum.CREATE)
+    @Role(UserRole.ADMIN, UserRole.PROFESSOR)
     async createAttendance(
         @Param('studentId', ParseUUIDPipe) studentId: string,
         @Body() createAttendanceReqDTO: CreateAttendanceReqDTO,
@@ -28,7 +27,7 @@ export class AttendanceController {
     }
 
     @Patch('update/:attendanceId')
-    @Role(AccessEntityEnum.ATTENDANCE, AccessActionEnum.UPDATE)
+    @Role(UserRole.ADMIN, UserRole.PROFESSOR)
     async updateAttendance(
         @Param('attendanceId', ParseUUIDPipe) attendanceId: string,
         @Body() updateAttendanceReqDTO: UpdateAttendanceReqDTO,
@@ -38,7 +37,7 @@ export class AttendanceController {
     }
 
     @Get('list')
-    @Role(AccessEntityEnum.ATTENDANCE, AccessActionEnum.VIEW)
+    @Role(UserRole.ADMIN, UserRole.PROFESSOR, UserRole.STUDENT)
     async listAttendance(
         @Body() listAttendanceReqDTO: ListAttendanceReqDTO,
         @GetCurrentUser() user: User
@@ -47,7 +46,7 @@ export class AttendanceController {
     }
 
     @Delete(':attendanceId')
-    @Role(AccessEntityEnum.ATTENDANCE, AccessActionEnum.DELETE)
+    @Role(UserRole.ADMIN, UserRole.PROFESSOR)
     async deleteAttendance(
         @Param('attendanceId', ParseUUIDPipe) attendanceId: string,
         @GetCurrentUser() user: User
