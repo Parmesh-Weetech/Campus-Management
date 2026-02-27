@@ -20,7 +20,7 @@ export class UserWriterService {
             email: createUserReqDTO.email,
             password: hashPassword,
             phoneNumber: createUserReqDTO.phoneNumber,
-            status: UserStatus.INVITED,
+            status: UserStatus.ACTIVE,
             userRole: role
         });
 

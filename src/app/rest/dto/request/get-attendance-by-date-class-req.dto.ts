@@ -1,6 +1,6 @@
 import { IsDateString, IsNotEmpty, IsOptional, IsString } from "class-validator";
 
-export class GetAttendanceByDateClassReqDTO {
+export class AttendanceByDateClassReqDTO {
     @IsOptional()
     @IsDateString()
     date?: string;

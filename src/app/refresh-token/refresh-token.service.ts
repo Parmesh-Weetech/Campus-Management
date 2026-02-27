@@ -10,8 +10,8 @@ export class RefreshTokenService {
         private readonly refreshTokenWriterService: RefreshTokenWriterService
     ) { }
 
-    async saveRefreshToken(refresh_token: string, userId: string): Promise<RefreshTokenResDTO> {
-        const savedRefreshToken = await this.refreshTokenWriterService.saveRefreshToken(refresh_token, userId);
+    async saveRefreshToken(refreshToken: string, userId: string): Promise<RefreshTokenResDTO> {
+        const savedRefreshToken = await this.refreshTokenWriterService.saveRefreshToken(refreshToken, userId);
 
         if (!savedRefreshToken) throw CustomExceptionFactory.create(ErrorCode.REFRESH_TOKEN_SAVE_FAILED);
 

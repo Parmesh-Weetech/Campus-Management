@@ -36,7 +36,7 @@ export class UserController {
     }
 
     @Get('profile/:userId')
-    @Role(UserRole.ADMIN)
+    @Role(UserRole.ADMIN, UserRole.PROFESSOR)
     @LogAround()
     async findUserProfileDetails(@Param("userId", ParseUUIDPipe) userId: string, @GetCurrentUser() user: User): Promise<UserResDTO> {
         return await this.userService.findUserProfileDetails(userId, user);

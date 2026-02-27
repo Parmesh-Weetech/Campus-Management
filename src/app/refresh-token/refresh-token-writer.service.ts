@@ -11,9 +11,9 @@ export class RefreshTokenWriterService {
         private readonly refreshTokenRepository: Repository<RefreshToken>
     ) { }
 
-    async saveRefreshToken(refresh_token: string, userId: string): Promise<RefreshToken> {
+    async saveRefreshToken(refreshToken: string, userId: string): Promise<RefreshToken> {
         return await this.refreshTokenRepository.save({
-            refresh_token,
+            refreshToken,
             user: { id: userId }
         });
     }
