@@ -1,6 +1,8 @@
+import { ApiProperty } from "@nestjs/swagger";
 import { Attendance } from "../../../attendance/entities/attendance.entity";
 import { APIResponse } from "../../../common/helper/response";
 
 export class AttendanceResDTO extends APIResponse {
-    data: Attendance
+    @ApiProperty({ type: () => Attendance })
+    data: Attendance;
 }

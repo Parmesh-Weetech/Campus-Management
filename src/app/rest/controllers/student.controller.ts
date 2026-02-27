@@ -8,8 +8,11 @@ import { AttendanceListResDTO } from "../dto/response/attendance-list-res.dto";
 import { ListStudentAttendanceReqDTO } from "../dto/request/list-student-attendance-req.dto";
 import { AttendanceResDTO } from "../dto/response/attendance-res.dto";
 import { AttendanceByDateClassReqDTO } from "../dto/request/get-attendance-by-date-class-req.dto";
+import { ApiBearerAuth, ApiResponse, ApiTags } from "@nestjs/swagger";
 
-@Controller('student')
+@Controller({ path: 'student' })
+@ApiTags('student')
+@ApiBearerAuth()
 export class StudentController {
     constructor(
         private readonly attendanceService: AttendanceService
@@ -17,6 +20,7 @@ export class StudentController {
 
     @Get('attendance/list')
     @Role(UserRole.STUDENT)
+    @ApiResponse({ status: 200, type: AttendanceListResDTO })
     async listAttendance(
         @Query() listStudentAttendanceReqDTO: ListStudentAttendanceReqDTO,
         @GetCurrentUser() user: User
@@ -26,6 +30,7 @@ export class StudentController {
 
     @Get('attendance')
     @Role(UserRole.STUDENT)
+    @ApiResponse({ status: 200, type: AttendanceResDTO })
     async getAttendanceByDateAndClass(
         @Query() query: AttendanceByDateClassReqDTO,
         @GetCurrentUser() user: User

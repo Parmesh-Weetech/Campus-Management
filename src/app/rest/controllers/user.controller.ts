@@ -11,16 +11,20 @@ import { FileInterceptor } from "@nestjs/platform-express";
 import { diskStorage } from "multer";
 import * as path from 'path';
 import { PROFILE_PHOTO_FILE_PATH, PROFILE_THUMBNAIL_FILE_PATH } from "src/app/user/helper/paths";
+import { ApiBearerAuth, ApiParam, ApiResponse, ApiTags } from "@nestjs/swagger";
 
-@Controller('user')
+@Controller({ path: 'user' })
+@ApiTags('user')
+@ApiBearerAuth()
 export class UserController {
     constructor(
         private readonly userService: UserService
     ) { }
-    
+
     @Post('create/professor')
     @Role(UserRole.ADMIN)
     @LogAround()
+    @ApiResponse({ status: 201, type: UserResDTO })
     async createProfessor(@Body() createUserReqDTO: CreateUserReqDTO): Promise<UserResDTO> {
         return await this.userService.createUser(createUserReqDTO, UserRole.PROFESSOR);
     }
@@ -28,6 +32,7 @@ export class UserController {
     @Post('create/student')
     @Role(UserRole.ADMIN)
     @LogAround()
+    @ApiResponse({ status: 201, type: UserResDTO })
     async createStudent(@Body() createUserReqDTO: CreateUserReqDTO): Promise<UserResDTO> {
         return await this.userService.createUser(createUserReqDTO, UserRole.STUDENT);
     }
@@ -35,6 +40,7 @@ export class UserController {
     @Get('profile')
     @Role(UserRole.ADMIN, UserRole.PROFESSOR, UserRole.STUDENT)
     @LogAround()
+    @ApiResponse({ status: 200, type: UserResDTO })
     async findProfileDetails(@GetCurrentUser() user: User): Promise<UserResDTO> {
         return await this.userService.findByIdOrThrow(user.id);
     }
@@ -42,6 +48,8 @@ export class UserController {
     @Get('profile/:userId')
     @Role(UserRole.ADMIN, UserRole.PROFESSOR)
     @LogAround()
+    @ApiResponse({ status: 200, type: UserResDTO })
+    @ApiParam({ name: 'userId', type: String })
     async findUserProfileDetails(@Param("userId", ParseUUIDPipe) userId: string, @GetCurrentUser() user: User): Promise<UserResDTO> {
         return await this.userService.findUserProfileDetails(userId, user);
     }
@@ -64,6 +72,11 @@ export class UserController {
         }),
     }))
     @LogAround()
+    @ApiResponse({
+        status: 200, schema: {
+            type: 'string'
+        }
+    })
     async uploadProfilePhoto(
         @UploadedFile() file: Express.Multer.File,
         @GetCurrentUser() user: User
@@ -89,6 +102,11 @@ export class UserController {
         }),
     }))
     @LogAround()
+    @ApiResponse({
+        status: 200, schema: {
+            type: 'string'
+        }
+    })
     async uploadProfileThumbnail(
         @UploadedFile() file: Express.Multer.File,
         @GetCurrentUser() user: User

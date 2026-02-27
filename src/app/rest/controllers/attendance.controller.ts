@@ -10,8 +10,11 @@ import { UpdateAttendanceReqDTO } from "../dto/request/update-attendance-req.dto
 import { Role } from "src/app/auth/decorators/role.decorator";
 import { UserRole } from "src/app/user/types/user-role";
 import { AttendanceByDateClassReqDTO } from "../dto/request/get-attendance-by-date-class-req.dto";
+import { ApiBearerAuth, ApiParam, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
 
-@Controller('attendance')
+@Controller({ path: 'attendance' })
+@ApiTags('attendance')
+@ApiBearerAuth()
 export class AttendanceController {
     constructor(
         private readonly attendanceService: AttendanceService
@@ -19,6 +22,8 @@ export class AttendanceController {
 
     @Post('create/:studentId')
     @Role(UserRole.ADMIN, UserRole.PROFESSOR)
+    @ApiResponse({ status: 201, type: AttendanceResDTO })
+    @ApiParam({ name: 'studentId', type: String })
     async createAttendance(
         @Param('studentId', ParseUUIDPipe) studentId: string,
         @Body() createAttendanceReqDTO: CreateAttendanceReqDTO,
@@ -29,6 +34,8 @@ export class AttendanceController {
 
     @Patch('update/:attendanceId')
     @Role(UserRole.ADMIN, UserRole.PROFESSOR)
+    @ApiResponse({ status: 200, type: AttendanceResDTO })
+    @ApiParam({ name: 'attendanceId', type: String })
     async updateAttendance(
         @Param('attendanceId', ParseUUIDPipe) attendanceId: string,
         @Body() updateAttendanceReqDTO: UpdateAttendanceReqDTO,
@@ -39,8 +46,14 @@ export class AttendanceController {
 
     @Get('list')
     @Role(UserRole.ADMIN, UserRole.PROFESSOR)
+    @ApiResponse({ status: 200, type: AttendanceListResDTO })
+    @ApiQuery({ name: 'page', required: false })
+    @ApiQuery({ name: 'size', required: false })
+    @ApiQuery({ name: 'month', required: false })
+    @ApiQuery({ name: 'studentId', required: false })
+    @ApiQuery({ name: 'className', required: false })
     async listAttendance(
-        @Body() listAttendanceReqDTO: ListAttendanceReqDTO,
+        @Query() listAttendanceReqDTO: ListAttendanceReqDTO,
         @GetCurrentUser() user: User
     ): Promise<AttendanceListResDTO> {
         return await this.attendanceService.listAttendance(listAttendanceReqDTO, user);
@@ -48,6 +61,8 @@ export class AttendanceController {
 
     @Get(':studentId')
     @Role(UserRole.ADMIN, UserRole.PROFESSOR)
+    @ApiResponse({ status: 200, type: AttendanceResDTO })
+    @ApiParam({ name: 'studentId', type: String })
     async getAttendanceByDateAndClass(
         @Param('studentId', ParseUUIDPipe) studentId: string,
         @Query() query: AttendanceByDateClassReqDTO
@@ -61,6 +76,8 @@ export class AttendanceController {
 
     @Delete(':attendanceId')
     @Role(UserRole.ADMIN, UserRole.PROFESSOR)
+    @ApiResponse({ status: 200, type: AttendanceResDTO })
+    @ApiParam({ name: 'attendanceId', type: String })
     async deleteAttendance(
         @Param('attendanceId', ParseUUIDPipe) attendanceId: string,
         @GetCurrentUser() user: User

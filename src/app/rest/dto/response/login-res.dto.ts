@@ -1,8 +1,13 @@
+import { ApiProperty } from "@nestjs/swagger";
 import { APIResponse } from "../../../common/helper/response";
 
+class LoginDataDTO {
+    @ApiProperty() accessToken: string;
+    @ApiProperty() refreshToken: string;
+}
+
 export class LoginResDTO extends APIResponse {
-    data: {
-        accessToken: string;
-        refreshToken: string;
-    }
+    @ApiProperty({ type: LoginDataDTO })
+    data: LoginDataDTO;
+
 }
