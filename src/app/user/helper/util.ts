@@ -1,6 +1,13 @@
 import { ProfileAccessUser } from "../types/profile-access.types";
 import { UserRole } from "../types/user-role";
 
+declare global {
+    interface EnvVar {
+        PROFILE_PHOTO_FILE_PATH: string;
+        PROFILE_THUMBNAIL_FILE_PATH: string;
+    }
+}
+
 export const canViewTargetProfile = (
     currentUser: ProfileAccessUser,
     targetUser: ProfileAccessUser

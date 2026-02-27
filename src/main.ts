@@ -7,7 +7,7 @@ async function bootstrap() {
     AppModule
   );
 
-  setupApp(app);
+  await setupApp(app);
 
   await app.listen(process.env.PORT ?? 3000);
 }

@@ -5,6 +5,7 @@ import { ConfigService } from "@nestjs/config";
 import { DataSource } from "typeorm";
 import { MainSeeder } from "db/seeders/seeder";
 import { CustomExceptionFilter } from "./app/common/exception/custom-exception.filter";
+import 'multer'
 
 export const setupApp = async (app: INestApplication) => {
     const configService = app.get(ConfigService);

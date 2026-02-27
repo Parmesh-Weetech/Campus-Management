@@ -26,4 +26,14 @@ export class UserWriterService {
 
         return createUser ?? null;
     }
+
+    async updateProfilePhoto(userId: string, profilePicture: string): Promise<User | null> {
+        const targetUser = await this.userRepository.findOne({ where: { id: userId } });
+
+        if (!targetUser) return null;
+
+        targetUser.profilePicture = profilePicture;
+
+        return await this.userRepository.save(targetUser);
+    }
 }

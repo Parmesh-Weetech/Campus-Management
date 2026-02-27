@@ -76,4 +76,15 @@ export class UserService {
             statusCode: 201
         };
     }
+
+    async uploadProfilePhoto(file: Express.Multer.File, user: User): Promise<string> {
+        if (!file) throw CustomExceptionFactory.create(ErrorCode.BAD_REQUEST, "File is required!");
+        if (!user?.id) throw CustomExceptionFactory.create(ErrorCode.USER_NOT_IN_REQUEST);
+
+        const updatedUser = await this.userWriterService.updateProfilePhoto(user.id, file.filename);
+
+        if (!updatedUser) throw CustomExceptionFactory.create(ErrorCode.USER_NOT_FOUND);
+
+        return file.filename;
+    }
 }

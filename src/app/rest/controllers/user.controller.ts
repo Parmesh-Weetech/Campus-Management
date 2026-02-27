@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Post } from "@nestjs/common";
+import { Body, Controller, Get, Param, ParseUUIDPipe, Post, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { LogAround } from "../../common/logger/log-around";
 import { CreateUserReqDTO } from "../dto/request/create-user-req.dto";
 import { UserResDTO } from "../dto/response/user-res.dto";
@@ -7,6 +7,7 @@ import { UserRole } from "../../user/types/user-role";
 import { Role } from "../../auth/decorators/role.decorator";
 import { GetCurrentUser } from "../../auth/decorators/currentUser.decorator";
 import { User } from "../../user/entities/user.entity";
+import { FileInterceptor } from "@nestjs/platform-express";
 
 @Controller('user')
 export class UserController {
@@ -41,4 +42,17 @@ export class UserController {
     async findUserProfileDetails(@Param("userId", ParseUUIDPipe) userId: string, @GetCurrentUser() user: User): Promise<UserResDTO> {
         return await this.userService.findUserProfileDetails(userId, user);
     }
+
+    @Post('upload/profile-photo')
+    @Role(UserRole.ADMIN, UserRole.PROFESSOR, UserRole.STUDENT)
+    @UseInterceptors(FileInterceptor('file'))
+    @LogAround()
+    async uploadProfilePhoto(
+        @UploadedFile() file: Express.Multer.File,
+        @GetCurrentUser() user: User
+    ): Promise<string> {
+        return await this.userService.uploadProfilePhoto(file, user);
+    }
+
+    
 }

@@ -2,8 +2,6 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import * as path from 'path';
 
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { environmentConfig, postgresConfig } from './app/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RestModule } from './app/rest/rest.module';
@@ -30,8 +28,6 @@ const envPath = path.resolve('.env');
     }),
     RestModule
   ],
-  controllers: [AppController],
-  providers: [AppService],
 })
 export class AppModule {
 
