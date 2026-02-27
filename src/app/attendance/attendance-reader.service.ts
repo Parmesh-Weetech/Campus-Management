@@ -52,6 +52,7 @@ export class AttendanceReaderService {
             .createQueryBuilder('attendance')
             .leftJoinAndSelect('attendance.student', 'student')
             .leftJoinAndSelect('attendance.recordedBy', 'recordedBy')
+            .where('attendance.deletedAt IS NULL')
             .orderBy('attendance.date', 'DESC')
             .addOrderBy('attendance.createdAt', 'DESC')
             .skip((query.page - 1) * query.size)
