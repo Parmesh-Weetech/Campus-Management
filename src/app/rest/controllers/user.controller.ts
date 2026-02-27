@@ -8,6 +8,9 @@ import { Role } from "../../auth/decorators/role.decorator";
 import { GetCurrentUser } from "../../auth/decorators/currentUser.decorator";
 import { User } from "../../user/entities/user.entity";
 import { FileInterceptor } from "@nestjs/platform-express";
+import { diskStorage } from "multer";
+import * as path from 'path';
+import { PROFILE_PHOTO_FILE_PATH, PROFILE_THUMBNAIL_FILE_PATH } from "src/app/user/helper/paths";
 
 @Controller('user')
 export class UserController {
@@ -45,7 +48,21 @@ export class UserController {
 
     @Post('upload/profile-photo')
     @Role(UserRole.ADMIN, UserRole.PROFESSOR, UserRole.STUDENT)
-    @UseInterceptors(FileInterceptor('file'))
+    @UseInterceptors(FileInterceptor('file', {
+        storage: diskStorage({
+            destination: path.resolve(PROFILE_PHOTO_FILE_PATH),
+            filename: (req, file, cb) => {
+                const loggedInUser = (req as { user?: User }).user;
+                const normalizedName = (loggedInUser?.name ?? 'user')
+                    .trim()
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, '-')
+                    .replace(/^-+|-+$/g, '');
+                const fileExtension = path.extname(file.originalname).toLowerCase();
+                cb(null, `${normalizedName || 'user'}-${Date.now()}${fileExtension}`);
+            }
+        }),
+    }))
     @LogAround()
     async uploadProfilePhoto(
         @UploadedFile() file: Express.Multer.File,
@@ -54,5 +71,28 @@ export class UserController {
         return await this.userService.uploadProfilePhoto(file, user);
     }
 
-    
+    @Post('upload/profile-thumbnail')
+    @Role(UserRole.ADMIN, UserRole.PROFESSOR, UserRole.STUDENT)
+    @UseInterceptors(FileInterceptor('file', {
+        storage: diskStorage({
+            destination: path.resolve(PROFILE_THUMBNAIL_FILE_PATH),
+            filename: (req, file, cb) => {
+                const loggedInUser = (req as { user?: User }).user;
+                const normalizedName = (loggedInUser?.name ?? 'user')
+                    .trim()
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, '-')
+                    .replace(/^-+|-+$/g, '');
+                const fileExtension = path.extname(file.originalname).toLowerCase();
+                cb(null, `${normalizedName || 'user'}-${Date.now()}${fileExtension}`);
+            }
+        }),
+    }))
+    @LogAround()
+    async uploadProfileThumbnail(
+        @UploadedFile() file: Express.Multer.File,
+        @GetCurrentUser() user: User
+    ): Promise<string> {
+        return await this.userService.uploadProfileThumbnail(file, user);
+    }
 }

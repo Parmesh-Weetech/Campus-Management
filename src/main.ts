@@ -4,7 +4,10 @@ import { setupApp } from './setup-app';
 
 async function bootstrap() {
   const app = await NestFactory.create(
-    AppModule
+    AppModule,
+    {
+      logger: ['error', 'debug', 'log']
+    }
   );
 
   await setupApp(app);

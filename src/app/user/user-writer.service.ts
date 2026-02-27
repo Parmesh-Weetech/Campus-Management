@@ -1,11 +1,11 @@
-import { Injectable, InternalServerErrorException } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { User } from "./entities/user.entity";
 import { Repository } from "typeorm";
 import { CreateUserReqDTO } from "../rest/dto/request/create-user-req.dto";
-import { UserResDTO } from "../rest/dto/response/user-res.dto";
 import { UserStatus } from "./types/user-status";
 import { UserRole } from "./types/user-role";
+import { ProfileImageType } from "./enum/profile-image-type.enum";
 
 @Injectable()
 export class UserWriterService {
@@ -27,12 +27,16 @@ export class UserWriterService {
         return createUser ?? null;
     }
 
-    async updateProfilePhoto(userId: string, profilePicture: string): Promise<User | null> {
+    async updateProfilePhotoOrThumbnail(userId: string, profilePictureOrThumbnail: string, profileImageType: ProfileImageType): Promise<User | null> {
         const targetUser = await this.userRepository.findOne({ where: { id: userId } });
 
         if (!targetUser) return null;
 
-        targetUser.profilePicture = profilePicture;
+        if (profileImageType === ProfileImageType.PROFILE_PHOTO) {
+            targetUser.profilePicture = profilePictureOrThumbnail;
+        } else {
+            targetUser.profilePictureThumbnail = profilePictureOrThumbnail;
+        }
 
         return await this.userRepository.save(targetUser);
     }

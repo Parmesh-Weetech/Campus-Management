@@ -9,6 +9,7 @@ import { ErrorCode } from '../common/exception/error-code';
 import { generateHashPassword } from '../auth/helper/util';
 import { User } from './entities/user.entity';
 import { canViewTargetProfile } from './helper/util';
+import { ProfileImageType } from './enum/profile-image-type.enum';
 
 @Injectable()
 export class UserService {
@@ -81,7 +82,18 @@ export class UserService {
         if (!file) throw CustomExceptionFactory.create(ErrorCode.BAD_REQUEST, "File is required!");
         if (!user?.id) throw CustomExceptionFactory.create(ErrorCode.USER_NOT_IN_REQUEST);
 
-        const updatedUser = await this.userWriterService.updateProfilePhoto(user.id, file.filename);
+        const updatedUser = await this.userWriterService.updateProfilePhotoOrThumbnail(user.id, file.filename, ProfileImageType.PROFILE_PHOTO);
+
+        if (!updatedUser) throw CustomExceptionFactory.create(ErrorCode.USER_NOT_FOUND);
+
+        return file.filename;
+    }
+
+    async uploadProfileThumbnail(file: Express.Multer.File, user: User): Promise<string> {
+        if (!file) throw CustomExceptionFactory.create(ErrorCode.BAD_REQUEST, "File is required!");
+        if (!user?.id) throw CustomExceptionFactory.create(ErrorCode.USER_NOT_IN_REQUEST);
+
+        const updatedUser = await this.userWriterService.updateProfilePhotoOrThumbnail(user.id, file.filename, ProfileImageType.THUMBNAIL);
 
         if (!updatedUser) throw CustomExceptionFactory.create(ErrorCode.USER_NOT_FOUND);
 
