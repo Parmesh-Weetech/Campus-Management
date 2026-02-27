@@ -46,6 +46,10 @@ lerna-debug.log*
 secrets
 secrets/*
 
+# assets
+assets
+assets/*
+
 # temp directory
 .temp
 .tmp
