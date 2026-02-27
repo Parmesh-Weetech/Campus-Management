@@ -6,9 +6,9 @@ import { UserWriterService } from './user-writer.service';
 import { UserRole } from './types/user-role';
 import { CustomExceptionFactory } from '../common/exception/custom-exception.factory';
 import { ErrorCode } from '../common/exception/error-code';
-import { generateHashPassword } from '../auth/helper/util';
+import { generateHashPassword } from '../auth/helper/utils';
 import { User } from './entities/user.entity';
-import { canViewTargetProfile } from './helper/util';
+import { canViewTargetProfile } from './helper/utils';
 import { ProfileImageType } from './enum/profile-image-type.enum';
 
 @Injectable()
