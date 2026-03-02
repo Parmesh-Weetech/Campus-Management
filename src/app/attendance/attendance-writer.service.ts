@@ -38,16 +38,6 @@ export class AttendanceWriterService {
         });
     }
 
-    async findByIdWithRelations(attendanceId: string): Promise<Attendance | null> {
-        return await this.attendanceRepository.findOne({
-            where: { id: attendanceId },
-            relations: {
-                student: true,
-                recordedBy: true
-            }
-        });
-    }
-
     async deleteAttendance(attendanceId: string): Promise<void> {
         await this.attendanceRepository.softDelete(attendanceId);
     }

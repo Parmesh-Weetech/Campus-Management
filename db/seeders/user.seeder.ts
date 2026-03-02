@@ -2,7 +2,7 @@ import { Seeder } from 'typeorm-extension';
 import { DataSource } from 'typeorm';
 import { User } from '../../src/app/user/entities/user.entity';
 import { UserStatus } from '../../src/app/user/types/user-status';
-import { generateHashPassword } from 'src/app/auth/helper/utils';
+import { generateHashPassword } from '../../src/app/auth/helper/utils';
 
 declare global {
     interface EnvVar {

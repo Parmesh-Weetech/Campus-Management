@@ -197,7 +197,7 @@ export class AttendanceService {
 
         if (!currentUserId) throw CustomExceptionFactory.create(ErrorCode.USER_NOT_IN_REQUEST);
 
-        const existingAttendance = await this.attendanceWriterService.findByIdWithRelations(attendanceId);
+        const existingAttendance = await this.attendanceReaderService.findByIdWithRelations(attendanceId);
 
         if (!existingAttendance) throw CustomExceptionFactory.create(ErrorCode.ATTENDANCE_NOT_FOUND);
 

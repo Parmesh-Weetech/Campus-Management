@@ -1,14 +1,14 @@
 import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query } from "@nestjs/common";
 import { CreateAttendanceReqDTO } from "../dto/request/create-attendance-req.dto";
 import { AttendanceResDTO } from "../dto/response/attendance-res.dto";
-import { GetCurrentUser } from "src/app/auth/decorators/currentUser.decorator";
-import { User } from "src/app/user/entities/user.entity";
-import { AttendanceService } from "src/app/attendance/attendance.service";
+import { GetCurrentUser } from "../../auth/decorators/currentUser.decorator";
+import { User } from "../../user/entities/user.entity";
+import { AttendanceService } from "../../attendance/attendance.service";
 import { ListAttendanceReqDTO } from "../dto/request/list-attendance-req.dto";
 import { AttendanceListResDTO } from "../dto/response/attendance-list-res.dto";
 import { UpdateAttendanceReqDTO } from "../dto/request/update-attendance-req.dto";
-import { Role } from "src/app/auth/decorators/role.decorator";
-import { UserRole } from "src/app/user/types/user-role";
+import { Role } from "../../auth/decorators/role.decorator";
+import { UserRole } from "../../user/types/user-role";
 import { AttendanceByDateClassReqDTO } from "../dto/request/get-attendance-by-date-class-req.dto";
 import { ApiBearerAuth, ApiParam, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
 
