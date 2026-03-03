@@ -15,7 +15,7 @@ export const defaultBeforeAll = async (): Promise<INestApplication> => {
     return app;
 };
 
-export const setupAdminUser = async (app: INestApplication): Promise<string> => {
+export const setupAdminUser = async (app: INestApplication): Promise<{ token: string, id: string }> => {
     const adminEmail = mockAdmin().email;
     const adminPassword = mockAdmin().password;
 
@@ -29,5 +29,8 @@ export const setupAdminUser = async (app: INestApplication): Promise<string> => 
 
     if (!loginResponse.body.data.accessToken) throw new InternalServerErrorException("Internal Server Error while processing login request!");
 
-    return loginResponse.body.data.accessToken;
+    return {
+        token: loginResponse.body.data.accessToken,
+        id: loginResponse.body.data.id
+    }
 }
