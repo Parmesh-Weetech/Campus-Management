@@ -2,7 +2,6 @@ import { INestApplication } from "@nestjs/common";
 import { defaultBeforeAll } from "../utils/commonHooks";
 import { mockAdmin } from "./auth-mock-data";
 import request from 'supertest';
-import { generateHashPassword } from "../../src/app/auth/helper/utils";
 
 describe('AuthController (e2e)', () => {
     let app: INestApplication;
