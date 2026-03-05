@@ -10,7 +10,7 @@ import { UserRole } from "../../src/app/user/types/user-role";
 
 describe("UserController (e2e)", () => {
     let app: INestApplication;
-    let adminResponse: { token: string, id: string }
+    let adminResponse: { token: string, id: string };
     let adminToken: string;
     let professorToken: string;
     let studentToken: string;
@@ -30,11 +30,10 @@ describe("UserController (e2e)", () => {
         adminResponse = await setupAdminUser(app);
         adminToken = adminResponse.token;
         adminId = adminResponse.id;
-        console.log(adminId);
 
         newUserName = `testProfessorUser-${randomId}`;
         newUserEmail = `test-professor-user-${randomId}@example.com`;
-        newUserPassword = generatePassword();
+        newUserPassword = "P27m_09@b0";
         newUserPhoneNumber = generatePhoneNumber();
 
         // Create Professor
@@ -73,7 +72,6 @@ describe("UserController (e2e)", () => {
 
         newUserName = `testStudentUser-${randomId}`;
         newUserEmail = `test-student-user-${randomId}@example.com`;
-        newUserPassword = generatePassword();
         newUserPhoneNumber = generatePhoneNumber();
 
         // Create Student
