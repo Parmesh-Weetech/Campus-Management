@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Post, UploadedFile, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Post, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { LogAround } from "../../common/logger/log-around";
 import { CreateUserReqDTO } from "../dto/request/create-user-req.dto";
 import { UserResDTO } from "../dto/response/user-res.dto";
@@ -12,6 +12,9 @@ import { diskStorage } from "multer";
 import * as path from 'path';
 import { PROFILE_PHOTO_FILE_PATH, PROFILE_THUMBNAIL_FILE_PATH } from "../../user/helper/paths";
 import { ApiBearerAuth, ApiParam, ApiResponse, ApiTags } from "@nestjs/swagger";
+import { AllowedMimeType } from "../../user/enum/image-type.enum";
+import { CustomExceptionFactory } from "../../common/exception/custom-exception.factory";
+import { ErrorCode } from "../../common/exception/error-code";
 
 @Controller({ path: 'user' })
 @ApiTags('user')
@@ -51,15 +54,21 @@ export class UserController {
     @ApiResponse({ status: 200, type: UserResDTO })
     @ApiParam({ name: 'userId', type: String })
     async findUserProfileDetails(@Param("userId", ParseUUIDPipe) userId: string, @GetCurrentUser() user: User): Promise<UserResDTO> {
+        console.log("in this route of professor")
         return await this.userService.findUserProfileDetails(userId, user);
     }
 
     @Post('upload/profile-photo')
+    @HttpCode(HttpStatus.OK)
     @Role(UserRole.ADMIN, UserRole.PROFESSOR, UserRole.STUDENT)
     @UseInterceptors(FileInterceptor('file', {
         storage: diskStorage({
             destination: path.resolve(PROFILE_PHOTO_FILE_PATH),
             filename: (req, file, cb) => {
+                if (file.mimetype !== AllowedMimeType.JPEG && file.mimetype !== AllowedMimeType.PNG) {
+                    throw CustomExceptionFactory.create(ErrorCode.BAD_REQUEST, 'Invalid file type');
+                }
+
                 const loggedInUser = (req as { user?: User }).user;
                 const normalizedName = (loggedInUser?.name ?? 'user')
                     .trim()
@@ -85,11 +94,16 @@ export class UserController {
     }
 
     @Post('upload/profile-thumbnail')
+    @HttpCode(HttpStatus.OK)
     @Role(UserRole.ADMIN, UserRole.PROFESSOR, UserRole.STUDENT)
     @UseInterceptors(FileInterceptor('file', {
         storage: diskStorage({
             destination: path.resolve(PROFILE_THUMBNAIL_FILE_PATH),
             filename: (req, file, cb) => {
+                if (file.mimetype !== AllowedMimeType.JPEG && file.mimetype !== AllowedMimeType.PNG) {
+                    throw CustomExceptionFactory.create(ErrorCode.BAD_REQUEST, 'Invalid file type');
+                }
+
                 const loggedInUser = (req as { user?: User }).user;
                 const normalizedName = (loggedInUser?.name ?? 'user')
                     .trim()

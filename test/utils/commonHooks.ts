@@ -25,12 +25,25 @@ export const setupAdminUser = async (app: INestApplication): Promise<{ token: st
             email: adminEmail,
             password: adminPassword
         })
-        .expect(201);
+        .expect(200);
+    
+    expect(loginResponse.body.data.accessToken).toBeDefined();
 
     if (!loginResponse.body.data.accessToken) throw new InternalServerErrorException("Internal Server Error while processing login request!");
 
+    const adminToken = loginResponse.body.data.accessToken;
+
+    const profileResponse = await request(app.getHttpServer())
+        .get('/api/user/profile')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+    if (!profileResponse.body?.data?.id) {
+        throw new InternalServerErrorException("Internal Server Error while fetching admin profile!");
+    }
+
     return {
-        token: loginResponse.body.data.accessToken,
-        id: loginResponse.body.data.id
+        token: adminToken,
+        id: profileResponse.body.data.id
     }
 }
