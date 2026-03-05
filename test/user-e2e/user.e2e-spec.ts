@@ -3,7 +3,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
 import { defaultBeforeAll, setupAdminUser, setupProfessorUser, setupStudentUser } from "../utils/commonHooks";
-import { generatePassword, generatePhoneNumber } from "../../src/app/user/helper/utils";
+import { generatePhoneNumber } from "../../src/app/user/helper/utils";
 import request from 'supertest';
 import { UserStatus } from "../../src/app/user/types/user-status";
 import { UserRole } from "../../src/app/user/types/user-role";
@@ -133,8 +133,6 @@ describe("UserController (e2e)", () => {
                 .set('Authorization', `Bearer ${adminToken}`)
                 .expect(200);
 
-            console.log(response.body.data);
-
             expect(response.body.data).toBeDefined();
             expect(response.body.data.userRole).toBe(UserRole.ADMIN);
             expect(response.body.data.email).toBeDefined();
@@ -146,8 +144,6 @@ describe("UserController (e2e)", () => {
                 .set('Authorization', `Bearer ${professorToken}`)
                 .expect(200);
 
-            console.log(response.body.data);
-
             expect(response.body.data).toBeDefined();
             expect(response.body.data.userRole).toBe(UserRole.PROFESSOR);
             expect(response.body.data.email).toBeDefined();
@@ -158,8 +154,6 @@ describe("UserController (e2e)", () => {
                 .get('/api/user/profile')
                 .set('Authorization', `Bearer ${studentToken}`)
                 .expect(200);
-
-            console.log(response.body.data);
 
             expect(response.body.data).toBeDefined();
             expect(response.body.data.userRole).toBe(UserRole.STUDENT);

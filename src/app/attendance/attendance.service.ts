@@ -32,7 +32,7 @@ export class AttendanceService {
         }
 
         const [student, recordedBy] = await Promise.all([
-            this.userService.findByIdOrThrow(studentId),
+        this.userService.findByIdOrThrow(studentId),
             this.userService.findByIdOrThrow(currentUserId)
         ]);
 

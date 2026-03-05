@@ -30,8 +30,6 @@ describe('AuthController (e2e)', () => {
         });
 
         it('SUCCESS: POST - Login with master admin credentials', async () => {
-            console.log(defaultEmail);
-            console.log(defaultPassword);
 
             const response = await request(app.getHttpServer())
                 .post('/api/auth/login')

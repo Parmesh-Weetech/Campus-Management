@@ -5,8 +5,6 @@ export const canViewTargetProfile = (
     currentUser: ProfileAccessUser,
     targetUser: ProfileAccessUser
 ): boolean => {
-    console.log("currentUser", currentUser.userRole, " ", "target", targetUser.userRole)
-
     if (currentUser.userRole === UserRole.ADMIN) {
         return true;
     }

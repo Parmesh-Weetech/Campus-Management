@@ -48,9 +48,8 @@ export class UserService {
 
     async findUserProfileDetails(userId: string, user: User): Promise<UserResDTO> {
         const targetUser = await this.findByIdOrThrow(userId);
-        console.log(targetUser);
+    
         const canView = canViewTargetProfile(user, targetUser.data);
-    console.log(canView);
 
         if (!canView) throw CustomExceptionFactory.create(ErrorCode.ROLE_PERMISSION_DENIED);
 

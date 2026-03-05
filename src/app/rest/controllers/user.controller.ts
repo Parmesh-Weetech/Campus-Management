@@ -54,7 +54,6 @@ export class UserController {
     @ApiResponse({ status: 200, type: UserResDTO })
     @ApiParam({ name: 'userId', type: String })
     async findUserProfileDetails(@Param("userId", ParseUUIDPipe) userId: string, @GetCurrentUser() user: User): Promise<UserResDTO> {
-        console.log("in this route of professor")
         return await this.userService.findUserProfileDetails(userId, user);
     }
 
