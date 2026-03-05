@@ -170,6 +170,19 @@ describe('AttendanceController (e2e)', () => {
                 expect(response.body.data.id).toEqual(professorEntryAttendanceId);
             });
 
+            it('Should give error on student update attendance', async () => {
+                await request(app.getHttpServer())
+                    .post(`/api/attendance/update/${professorEntryAttendanceId}`)
+                    .set('Authorization', `Bearer ${studentToken}`)
+                    .send({
+                        date,
+                        status: "PRESENT",
+                        className: "Social Science"
+                    });
+
+                expect(403);
+            });
+
             it('Should give error on missing attendanceId', async () => {
                 await request(app.getHttpServer())
                     .patch(`/api/attendance/update/`)
@@ -204,6 +217,53 @@ describe('AttendanceController (e2e)', () => {
             });
         });
 
-        
-    })
+        describe('List Attendance', () => {
+            it('Admin should be able to list attendance based on filters', async () => {
+                const response = await request(app.getHttpServer())
+                    .get('/api/attendance/list')
+                    .query({
+                        page: 1,
+                        size: 10,
+                        studentId
+                    })
+                    .set('Authorization', `Bearer ${adminToken}`)
+
+                expect(200)
+                expect(response.body.data).toBeDefined();
+                expect(Array.isArray(response.body.data.items)).toBe(true);
+            });
+
+            it('Professor should be able to list attendance based on filters', async () => {
+                const response = await request(app.getHttpServer())
+                    .get('/api/attendance/list')
+                    .query({
+                        page: 1,
+                        size: 10,
+                        studentId,
+                        className: "Social Science"
+                    });
+
+                expect(200)
+                expect(response.body.data).toBeDefined();
+                expect(Array.isArray(response.body.data.items)).toBe(true);
+            });
+
+            it('Should give error on missing studentId', async () => {
+                await request(app.getHttpServer())
+                    .get('/api/attendance/list')
+                    .query({
+                        page: 1,
+                        size: 10
+                    });
+
+                expect(400);
+            });
+        });
+
+        describe('Get Attendance By Date and Class', () => {
+            it('Admin should able to list attendance based on date and class', async () => {
+                
+            })
+        });
+    });
 })
