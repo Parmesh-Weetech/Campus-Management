@@ -2,7 +2,7 @@ import { INestApplication } from "@nestjs/common"
 import * as path from 'path';
 import * as fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
-import { defaultBeforeAll, setupAdminUser } from "../utils/commonHooks";
+import { defaultBeforeAll, setupAdminUser, setupProfessorUser, setupStudentUser } from "../utils/commonHooks";
 import { generatePassword, generatePhoneNumber } from "../../src/app/user/helper/utils";
 import request from 'supertest';
 import { UserStatus } from "../../src/app/user/types/user-status";
@@ -30,6 +30,7 @@ describe("UserController (e2e)", () => {
         adminResponse = await setupAdminUser(app);
         adminToken = adminResponse.token;
         adminId = adminResponse.id;
+        console.log(adminId);
 
         newUserName = `testProfessorUser-${randomId}`;
         newUserEmail = `test-professor-user-${randomId}@example.com`;
@@ -64,20 +65,11 @@ describe("UserController (e2e)", () => {
                 password: newUserPassword,
                 phoneNumber: newUserPhoneNumber
             })
-            .expect(401)
+            .expect(401);
 
         // Login Professor
-        const professorLogin = await request(app.getHttpServer())
-            .post('/api/auth/login')
-            .send({
-                email: newUserEmail,
-                password: newUserPassword
-            })
-            .expect(200);
-
-        expect(professorLogin.body.data.accessToken).toBeDefined();
-
-        professorToken = professorLogin.body.data.accessToken;
+        const professorLoginResponse = await setupProfessorUser(app, newUserEmail, newUserPassword);
+        professorToken = professorLoginResponse
 
         newUserName = `testStudentUser-${randomId}`;
         newUserEmail = `test-student-user-${randomId}@example.com`;
@@ -85,7 +77,7 @@ describe("UserController (e2e)", () => {
         newUserPhoneNumber = generatePhoneNumber();
 
         // Create Student
-        const successResponseStudent = await request(app.getHttpServer())
+        const responseStudent = await request(app.getHttpServer())
             .post('/api/user/create/student')
             .set('Authorization', `Bearer ${adminToken}`)
             .send({
@@ -96,11 +88,11 @@ describe("UserController (e2e)", () => {
             })
             .expect(201);
 
-        expect(successResponseStudent.body.data).toBeDefined();
-        expect(successResponseStudent.body.data.id).toBeDefined();
-        expect(successResponseStudent.body.data.email).toBe(newUserEmail);
-        expect(successResponseStudent.body.data.status).toBe(UserStatus.ACTIVE);
-        studentId = successResponseStudent.body.data.id;
+        expect(responseStudent.body.data).toBeDefined();
+        expect(responseStudent.body.data.id).toBeDefined();
+        expect(responseStudent.body.data.email).toBe(newUserEmail);
+        expect(responseStudent.body.data.status).toBe(UserStatus.ACTIVE);
+        studentId = responseStudent.body.data.id;
 
         // Should get error as professor user cannot create user
         await request(app.getHttpServer())
@@ -127,17 +119,9 @@ describe("UserController (e2e)", () => {
             .expect(401);
 
         // 5️⃣ Login student
-        const studentLogin = await request(app.getHttpServer())
-            .post('/api/auth/login')
-            .send({
-                email: newUserEmail,
-                password: newUserPassword
-            })
-            .expect(200);
+        const studentLogin = await setupStudentUser(app, newUserEmail, newUserPassword);
 
-        expect(studentLogin.body.data.accessToken).toBeDefined();
-
-        studentToken = studentLogin.body.data.accessToken;
+        studentToken = studentLogin;
     });
 
     afterAll(async () => {
@@ -176,7 +160,7 @@ describe("UserController (e2e)", () => {
                 .get('/api/user/profile')
                 .set('Authorization', `Bearer ${studentToken}`)
                 .expect(200);
-            
+
             console.log(response.body.data);
 
             expect(response.body.data).toBeDefined();
@@ -260,7 +244,7 @@ describe("UserController (e2e)", () => {
     describe('User can upload their profile-photo and thumbnail photo', () => {
         it('Should upload profile-photo for admin', async () => {
             // create temp file
-            const tmpDir = path.join(__dirname, '..', 'assets', 'profile-photo');
+            const tmpDir = path.join(__dirname, '..', '..', 'assets', 'profile-photo');
 
             if (!fs.existsSync(tmpDir)) {
                 fs.mkdirSync(tmpDir, { recursive: true });
@@ -294,7 +278,7 @@ describe("UserController (e2e)", () => {
 
         it('Should upload profile-photo for professor', async () => {
             // create temp file
-            const tmpDir = path.join(__dirname, '..', 'assets', 'profile-photo');
+            const tmpDir = path.join(__dirname, '..', '..', 'assets', 'profile-photo');
 
             if (!fs.existsSync(tmpDir)) {
                 fs.mkdirSync(tmpDir, { recursive: true });
@@ -328,7 +312,7 @@ describe("UserController (e2e)", () => {
 
         it('Should upload profile-photo for student', async () => {
             // create temp file
-            const tmpDir = path.join(__dirname, '..', 'assets', 'profile-photo');
+            const tmpDir = path.join(__dirname, '..', '..', 'assets', 'profile-photo');
 
             if (!fs.existsSync(tmpDir)) {
                 fs.mkdirSync(tmpDir, { recursive: true });

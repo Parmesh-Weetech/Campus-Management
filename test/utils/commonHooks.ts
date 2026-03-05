@@ -4,6 +4,7 @@ import request from 'supertest';
 import { AppModule } from "../../src/app.module";
 import { setupApp } from "../../src/setup-app";
 import { mockAdmin } from "../../test/auth-e2e/auth-mock-data";
+import { UserStatus } from "../../src/app/user/types/user-status";
 
 export const defaultBeforeAll = async (): Promise<INestApplication> => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -26,7 +27,7 @@ export const setupAdminUser = async (app: INestApplication): Promise<{ token: st
             password: adminPassword
         })
         .expect(200);
-    
+
     expect(loginResponse.body.data.accessToken).toBeDefined();
 
     if (!loginResponse.body.data.accessToken) throw new InternalServerErrorException("Internal Server Error while processing login request!");
@@ -46,4 +47,50 @@ export const setupAdminUser = async (app: INestApplication): Promise<{ token: st
         token: adminToken,
         id: profileResponse.body.data.id
     }
+}
+
+export const setupProfessorUser = async (
+    app: INestApplication,
+    email: string,
+    password: string
+): Promise<string> => {
+    const loginResponse = await request(app.getHttpServer())
+        .post('/api/auth/login')
+        .send({
+            email,
+            password
+        })
+        .expect(200);
+
+    expect(loginResponse.body.data).toBeDefined();
+    expect(loginResponse.body.data.accessToken).toBeDefined();
+
+    if (!loginResponse.body.data.accessToken) throw new InternalServerErrorException("Internal Server Error while processing login request!");
+
+    const professorToken = loginResponse.body.data.accessToken;
+
+    return professorToken
+}
+
+export const setupStudentUser = async (
+    app: INestApplication,
+    email: string,
+    password: string
+): Promise<string> => {
+    const loginResponse = await request(app.getHttpServer())
+        .post('/api/auth/login')
+        .send({
+            email,
+            password
+        })
+        .expect(200);
+
+    expect(loginResponse.body.data).toBeDefined();
+    expect(loginResponse.body.data.accessToken).toBeDefined();
+
+    if (!loginResponse.body.data.accessToken) throw new InternalServerErrorException("Internal Server Error while processing login request!");
+
+    const studentToken = loginResponse.body.data.accessToken;
+
+    return studentToken;
 }
