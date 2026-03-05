@@ -25,6 +25,7 @@
     "src/app/common/utils",
     "src/app/common/helpers",
     "src/app/common/infra",
-    "src/app/config"
+    "src/app/config",
+    "src/app/common/logger"
   ]
 }
