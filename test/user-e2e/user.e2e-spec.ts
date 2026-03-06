@@ -104,13 +104,13 @@ describe("UserController (e2e)", () => {
             })
             .expect(201);
 
-        expect(successResponseProfessor.body).toEqual(
+        expect(responseStudent.body).toEqual(
             expect.objectContaining({
                 success: true,
                 data: expect.any(Object)
             })
         );
-        expect(successResponseProfessor.body.data).toHaveProperty('id');
+        expect(responseStudent.body.data).toHaveProperty('id');
         expect(responseStudent.body.data.email).toBe(newUserEmail);
         expect(responseStudent.body.data.status).toBe(UserStatus.ACTIVE);
         studentId = responseStudent.body.data.id;
@@ -387,6 +387,64 @@ describe("UserController (e2e)", () => {
             expect(filename).toBeDefined();
             uploadedProfilePhotos.push(filename as string);
         });
+
+        it('Should give error on invalid file type', async () => {
+            const tmpDir = path.join(__dirname, '..', '..', 'assets', 'profile-photo');
+            if (!fs.existsSync(tmpDir)) {
+                fs.mkdirSync(tmpDir, { recursive: true });
+            }
+
+            const invalidFilePath = path.join(tmpDir, `test-invalid-${uuidv4()}.txt`);
+            fs.writeFileSync(invalidFilePath, 'not-an-image');
+            tempFiles.push(invalidFilePath);
+
+            const response = await request(app.getHttpServer())
+                .post(`/api/user/upload/profile-photo`)
+                .set('Authorization', `Bearer ${studentToken}`)
+                .attach('file', invalidFilePath)
+                .expect(400);
+
+            expect(response.body).toEqual(
+                expect.objectContaining({
+                    success: false,
+                    message: 'Invalid file type'
+                })
+            );
+        });
+
+        it('Should give error on no token', async () => {
+            const tmpDir = path.join(__dirname, '..', '..', 'assets', 'profile-photo');
+            const filePath = createTempImage(tmpDir, 'test-student', 'dummy-image-content-student');
+            tempFiles.push(filePath);
+
+            await request(app.getHttpServer())
+                .post(`/api/user/upload/profile-photo`)
+                .attach('file', filePath)
+                .expect(401)
+        });
+
+        it('Should give error on invalid token', async () => {
+            const tmpDir = path.join(__dirname, '..', '..', 'assets', 'profile-photo');
+            const filePath = createTempImage(tmpDir, 'test-student', 'dummy-image-content-student');
+            tempFiles.push(filePath);
+
+            await request(app.getHttpServer())
+                .post(`/api/user/upload/profile-photo`)
+                .set('Authorization', `Bearer invalid.token.withnodata`)
+                .attach('file', filePath)
+                .expect(401)
+        });
+
+        it('Should give error on missing file', async () => {
+            const tmpDir = path.join(__dirname, '..', '..', 'assets', 'profile-photo');
+            const filePath = createTempImage(tmpDir, 'test-student', 'dummy-image-content-student');
+            tempFiles.push(filePath);
+
+            await request(app.getHttpServer())
+                .post(`/api/user/upload/profile-photo`)
+                .set('Authorization', `Bearer ${studentToken}`)
+                .expect(400)
+        })
     });
 
     describe('User can upload their thumbnail-photo', () => {
@@ -439,6 +497,30 @@ describe("UserController (e2e)", () => {
 
             expect(filename).toBeDefined();
             uploadedProfileThumbnails.push(filename as string);
+        });
+
+        it('Should give error on invalid file type', async () => {
+            const tmpDir = path.join(__dirname, '..', '..', 'assets', 'profile-photo');
+            if (!fs.existsSync(tmpDir)) {
+                fs.mkdirSync(tmpDir, { recursive: true });
+            }
+
+            const invalidFilePath = path.join(tmpDir, `test-invalid-${uuidv4()}.txt`);
+            fs.writeFileSync(invalidFilePath, 'not-an-image');
+            tempFiles.push(invalidFilePath);
+
+            const response = await request(app.getHttpServer())
+                .post(`/api/user/upload/profile-thumbnail`)
+                .set('Authorization', `Bearer ${studentToken}`)
+                .attach('file', invalidFilePath)
+                .expect(400);
+
+            expect(response.body).toEqual(
+                expect.objectContaining({
+                    success: false,
+                    message: 'Invalid file type'
+                })
+            );
         });
     })
 })

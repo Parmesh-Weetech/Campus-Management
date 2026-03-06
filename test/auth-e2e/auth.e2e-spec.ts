@@ -34,10 +34,10 @@ describe('AuthController (e2e)', () => {
             await request(app.getHttpServer())
                 .post('/api/auth/login')
                 .send({
-                    email: 'wrong@example.com',
+                    email: defaultEmail,
                     password: 'wrongpassword',
                 })
-                .expect(404);
+                .expect(401);
         });
 
         it('SUCCESS: POST - Login with master admin credentials', async () => {
@@ -59,5 +59,14 @@ describe('AuthController (e2e)', () => {
             expect(response.body.data).toHaveProperty('accessToken');
             expect(response.body.data).toHaveProperty('refreshToken');
         });
+
+        it('Should give error on missing field', async () => {
+            const response = await request(app.getHttpServer())
+                .post('/api/auth/login')
+                .send({
+                    password: defaultPassword
+                })
+                .expect(400)
+        })
     });
 });

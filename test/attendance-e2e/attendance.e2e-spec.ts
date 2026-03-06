@@ -143,6 +143,18 @@ describe('AttendanceController (e2e)', () => {
                     .expect(403);
             });
 
+            it('Should give conflict error on duplicate record', async () => {
+                await request(server)
+                    .post(`/api/attendance/create/${studentId}`)
+                    .set('Authorization', `Bearer ${professorToken}`)
+                    .send({
+                        date,
+                        status: "PRESENT",
+                        className: professorClassName
+                    })
+                    .expect(409)
+            })
+
             it('Should give error if studentId is not of student', async () => {
                 await request(server)
                     .post(`/api/attendance/create/${professorId}`)
@@ -228,6 +240,16 @@ describe('AttendanceController (e2e)', () => {
                 );
                 expect(response.body.data).toHaveProperty('id');
                 expect(response.body.data.id).toEqual(professorEntryAttendanceId);
+            });
+
+            it('Should give conflict error when update creates duplicate combination', async () => {
+                await request(server)
+                    .patch(`/api/attendance/update/${adminEntryAttendanceId}`)
+                    .set('Authorization', `Bearer ${adminToken}`)
+                    .send({
+                        className: professorClassName
+                    })
+                    .expect(409);
             });
 
             it('Should give error on student update attendance', async () => {
@@ -339,6 +361,29 @@ describe('AttendanceController (e2e)', () => {
                 expect(Array.isArray(response.body.data.items)).toBe(true);
             });
 
+            it('Should give error on invalid month format', async () => {
+                await request(server)
+                    .get('/api/attendance/list')
+                    .query({
+                        studentId,
+                        month: '2026/03'
+                    })
+                    .set('Authorization', `Bearer ${adminToken}`)
+                    .expect(400);
+            });
+
+            it('Should give error on invalid page and size values', async () => {
+                await request(server)
+                    .get('/api/attendance/list')
+                    .query({
+                        studentId,
+                        page: 0,
+                        size: 101
+                    })
+                    .set('Authorization', `Bearer ${adminToken}`)
+                    .expect(400);
+            });
+
             it('Should give error if student try to access it', async () => {
                 await request(server)
                     .get('/api/attendance/list')
@@ -415,6 +460,17 @@ describe('AttendanceController (e2e)', () => {
                     })
                     .set('Authorization', `Bearer ${professorToken}`)
                     .expect(400);
+            });
+
+            it('Should give error on non-existing record', async () => {
+                await request(server)
+                    .get(`/api/attendance/${studentId}`)
+                    .query({
+                        date: "2026-05-05",
+                        className: "ABCD"
+                    })
+                    .set('Authorization', `Bearer ${professorToken}`)
+                    .expect(404)
             });
         });
 

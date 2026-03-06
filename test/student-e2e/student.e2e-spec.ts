@@ -202,12 +202,31 @@ describe('StudentController (e2e)', () => {
         });
 
         describe('Student attendance based on date and class', () => {
-            it('Should give attendance based on date and className', async () => {
+            it('Should give attendance based on date and admin className', async () => {
                 const response = await request(server)
                     .get('/api/student/attendance')
                     .query({
                         date,
                         className: adminClassName
+                    })
+                    .set('Authorization', `Bearer ${studentToken}`)
+                    .expect(200);
+
+                expect(response.body).toEqual(
+                    expect.objectContaining({
+                        success: true,
+                        data: expect.any(Object)
+                    })
+                );
+                expect(response.body.data).toHaveProperty('id');
+            });
+
+            it('Should give attendance based on date and professor className', async () => {
+                const response = await request(server)
+                    .get('/api/student/attendance')
+                    .query({
+                        date,
+                        className: professorClassName
                     })
                     .set('Authorization', `Bearer ${studentToken}`)
                     .expect(200);
@@ -230,6 +249,17 @@ describe('StudentController (e2e)', () => {
                     })
                     .expect(400);
             });
+
+            it('Should give error if record not found', async () => {
+                await request(server)
+                    .get('/api/student/attendance')
+                    .set('Authorization', `Bearer ${studentToken}`)
+                    .query({
+                        date: "2026-05-05",
+                        className: "Maths"
+                    })
+                    .expect(404)
+            })
         })
     });
 });
