@@ -22,6 +22,8 @@ describe('AttendanceController (e2e)', () => {
     let date: string;
     let adminEntryAttendanceId: string;
     let professorEntryAttendanceId: string;
+    let adminClassName: string;
+    let professorClassName: string;
 
     beforeAll(async () => {
         app = await defaultBeforeAll();
@@ -54,6 +56,8 @@ describe('AttendanceController (e2e)', () => {
         studentId = studentProfileResponse.body.data.id;
 
         date = formatDateAsYYYYMMDD(new Date());
+        adminClassName = `Drawing-${Date.now()}`;
+        professorClassName = `Social-Science-${Date.now()}`;
     });
 
     afterAll(async () => {
@@ -84,7 +88,7 @@ describe('AttendanceController (e2e)', () => {
                     .send({
                         date,
                         status: "PRESENT",
-                        className: "Drawing"
+                        className: adminClassName
                     })
                     .expect(201);
 
@@ -106,7 +110,7 @@ describe('AttendanceController (e2e)', () => {
                     .send({
                         date,
                         status: "PRESENT",
-                        className: "Social Science"
+                        className: professorClassName
                     })
                     .expect(201);
 
@@ -128,7 +132,7 @@ describe('AttendanceController (e2e)', () => {
                     .send({
                         date,
                         status: "PRESENT",
-                        className: "Social Science"
+                        className: professorClassName
                     })
                     .expect(403);
             });
@@ -140,7 +144,7 @@ describe('AttendanceController (e2e)', () => {
                     .send({
                         date,
                         status: "PRESENT",
-                        className: "Social Science"
+                        className: professorClassName
                     })
                     .expect(400);
             });
@@ -152,7 +156,7 @@ describe('AttendanceController (e2e)', () => {
                     .send({
                         date,
                         status: "PRESENT",
-                        className: "Social Science"
+                        className: professorClassName
                     })
                     .expect(401);
             });
@@ -163,7 +167,7 @@ describe('AttendanceController (e2e)', () => {
                     .send({
                         date,
                         status: "PRESENT",
-                        className: "Social Science"
+                        className: professorClassName
                     })
                     .expect(401);
             });
@@ -225,7 +229,7 @@ describe('AttendanceController (e2e)', () => {
                     .send({
                         date,
                         status: "PRESENT",
-                        className: "Social Science"
+                        className: professorClassName
                     })
                     .expect(403);
             });
@@ -286,7 +290,7 @@ describe('AttendanceController (e2e)', () => {
                     .get('/api/attendance/list')
                     .query({
                         studentId,
-                        className: "Social Science"
+                        className: professorClassName
                     })
                     .set('Authorization', `Bearer ${professorToken}`)
                     .expect(200);
@@ -345,7 +349,7 @@ describe('AttendanceController (e2e)', () => {
                     .get(`/api/attendance/${studentId}`)
                     .query({
                         date,
-                        className: "Social Science"
+                        className: professorClassName
                     })
                     .set('Authorization', `Bearer ${adminToken}`)
                     .expect(200);
@@ -363,7 +367,7 @@ describe('AttendanceController (e2e)', () => {
                     .get(`/api/attendance/${studentId}`)
                     .query({
                         date,
-                        className: "Social Science"
+                        className: professorClassName
                     })
                     .set('Authorization', `Bearer ${professorToken}`)
                     .expect(200);
@@ -381,7 +385,7 @@ describe('AttendanceController (e2e)', () => {
                     .get(`/api/attendance/${studentId}`)
                     .query({
                         date,
-                        className: "Social Science"
+                        className: professorClassName
                     })
                     .set('Authorization', `Bearer ${studentToken}`)
                     .expect(403);

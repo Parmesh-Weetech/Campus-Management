@@ -9,8 +9,6 @@ describe('AuthController (e2e)', () => {
     let app: INestApplication;
     let defaultEmail: string;
     let defaultPassword: string;
-    let accessToken: string;
-    let refreshToken: string;
 
     beforeAll(async () => {
         app = await defaultBeforeAll();
@@ -54,9 +52,6 @@ describe('AuthController (e2e)', () => {
 
             expect(response.body.data).toHaveProperty('accessToken');
             expect(response.body.data).toHaveProperty('refreshToken');
-
-            accessToken = response.body.data.accessToken;
-            refreshToken = response.body.data.refreshToken;
         });
     });
 });
