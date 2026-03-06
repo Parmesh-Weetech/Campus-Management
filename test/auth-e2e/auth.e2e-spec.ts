@@ -50,6 +50,12 @@ describe('AuthController (e2e)', () => {
                 })
                 .expect(200);
 
+            expect(response.body).toEqual(
+                expect.objectContaining({
+                    success: true,
+                    data: expect.any(Object)
+                })
+            );
             expect(response.body.data).toHaveProperty('accessToken');
             expect(response.body.data).toHaveProperty('refreshToken');
         });
