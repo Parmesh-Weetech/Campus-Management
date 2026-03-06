@@ -211,6 +211,29 @@ describe('StudentController (e2e)', () => {
                     .set('Authorization', `Bearer ${studentToken}`)
                     .expect(403);
             });
+
+            it('Should give error on invalid month format', async () => {
+                await request(server)
+                    .get('/api/student/attendance/list')
+                    .query({
+                        month: '2026/03'
+                    })
+                    .set('Authorization', `Bearer ${studentToken}`)
+                    .expect(400);
+            });
+
+            it('Should give error on invalid token', async () => {
+                await request(server)
+                    .get('/api/student/attendance/list')
+                    .set('Authorization', 'Bearer invalid.token.value')
+                    .expect(401);
+            });
+
+            it('Should give error on no token provided', async () => {
+                await request(server)
+                    .get('/api/student/attendance/list')
+                    .expect(401);
+            });
         });
 
         describe('Student attendance based on date and class', () => {
@@ -252,6 +275,23 @@ describe('StudentController (e2e)', () => {
                 expect(response.body.data).toHaveProperty('id');
             });
 
+            it('Should use today date when date is omitted', async () => {
+                const response = await request(server)
+                    .get('/api/student/attendance')
+                    .query({
+                        className: professorClassName
+                    })
+                    .set('Authorization', `Bearer ${studentToken}`)
+                    .expect(200);
+
+                expect(response.body).toEqual(
+                    expect.objectContaining({
+                        success: true,
+                        data: expect.any(Object)
+                    })
+                );
+            });
+
             it('Should give error if className is missing', async () => {
                 await request(server)
                     .get('/api/student/attendance')
@@ -271,7 +311,39 @@ describe('StudentController (e2e)', () => {
                         className: "Maths"
                     })
                     .expect(404)
-            })
+            });
+
+            it('Should give error if date is invalid', async () => {
+                await request(server)
+                    .get('/api/student/attendance')
+                    .set('Authorization', `Bearer ${studentToken}`)
+                    .query({
+                        date: '2026/05/01',
+                        className: professorClassName
+                    })
+                    .expect(400);
+            });
+
+            it('Should give error on invalid token', async () => {
+                await request(server)
+                    .get('/api/student/attendance')
+                    .query({
+                        date,
+                        className: professorClassName
+                    })
+                    .set('Authorization', 'Bearer invalid.token.value')
+                    .expect(401);
+            });
+
+            it('Should give error on no token provided', async () => {
+                await request(server)
+                    .get('/api/student/attendance')
+                    .query({
+                        date,
+                        className: professorClassName
+                    })
+                    .expect(401);
+            });
         })
     });
 });

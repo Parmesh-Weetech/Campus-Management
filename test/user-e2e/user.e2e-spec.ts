@@ -289,6 +289,13 @@ describe("UserController (e2e)", () => {
             expect(response.body.data.email).toBeDefined();
             expect(response.body.data.id).toEqual(studentId);
         });
+
+        it('Should give error on invalid userId format', async () => {
+            await request(app.getHttpServer())
+                .get('/api/user/profile/not-a-uuid')
+                .set('Authorization', `Bearer ${adminToken}`)
+                .expect(400);
+        });
     });
 
     describe("Professor can access student profile", () => {
@@ -521,6 +528,36 @@ describe("UserController (e2e)", () => {
                     message: 'Invalid file type'
                 })
             );
+        });
+
+        it('Should give error on no token', async () => {
+            const tmpDir = path.join(__dirname, '..', '..', 'assets', 'thumbnail-photo');
+            const filePath = createTempImage(tmpDir, 'test-student', 'dummy-image-content-student');
+            tempFiles.push(filePath);
+
+            await request(app.getHttpServer())
+                .post(`/api/user/upload/profile-thumbnail`)
+                .attach('file', filePath)
+                .expect(401);
+        });
+
+        it('Should give error on invalid token', async () => {
+            const tmpDir = path.join(__dirname, '..', '..', 'assets', 'thumbnail-photo');
+            const filePath = createTempImage(tmpDir, 'test-student', 'dummy-image-content-student');
+            tempFiles.push(filePath);
+
+            await request(app.getHttpServer())
+                .post(`/api/user/upload/profile-thumbnail`)
+                .set('Authorization', `Bearer invalid.token.withnodata`)
+                .attach('file', filePath)
+                .expect(401);
+        });
+
+        it('Should give error on missing file', async () => {
+            await request(app.getHttpServer())
+                .post(`/api/user/upload/profile-thumbnail`)
+                .set('Authorization', `Bearer ${studentToken}`)
+                .expect(400);
         });
     })
 })
