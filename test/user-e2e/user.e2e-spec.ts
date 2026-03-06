@@ -11,52 +11,11 @@ import { UserRole } from "../../src/app/user/types/user-role";
 import { DataSource } from "typeorm";
 import { User } from "../../src/app/user/entities/user.entity";
 import { RefreshToken } from "../../src/app/refresh-token/entities/refresh-token.entity";
+import { createTempImage, extractFilename } from "../utils/image-operation";
 
 const PROJECT_ROOT = path.resolve(__dirname, '..', '..');
 const ABS_PROFILE_PHOTO_DIR = path.resolve(PROJECT_ROOT, PROFILE_PHOTO_FILE_PATH);
 const ABS_PROFILE_THUMBNAIL_DIR = path.resolve(PROJECT_ROOT, PROFILE_THUMBNAIL_FILE_PATH);
-
-const normalizeStoredFilename = (value: string): string => {
-    return path.basename(value.trim().replace(/^["']|["']$/g, ''));
-};
-
-const extractFilename = (response: { body: any; text: string }): string | undefined => {
-    if (typeof response.body === 'string') {
-        return normalizeStoredFilename(response.body);
-    }
-
-    if (response.body && typeof response.body === 'object') {
-        const candidates = [
-            response.body.fileKey,
-            response.body.data,
-            response.body.name,
-            response.body.filename,
-            response.text
-        ];
-
-        const firstString = candidates.find((val) => typeof val === 'string');
-        if (typeof firstString === 'string' && firstString.length > 0) {
-            return normalizeStoredFilename(firstString);
-        }
-        return undefined;
-    }
-
-    if (typeof response.text === 'string' && response.text.length > 0) {
-        return normalizeStoredFilename(response.text);
-    }
-
-    return undefined;
-};
-
-const createTempImage = (tmpDir: string, filenamePrefix: string, content: string): string => {
-    if (!fs.existsSync(tmpDir)) {
-        fs.mkdirSync(tmpDir, { recursive: true });
-    }
-
-    const filePath = path.join(tmpDir, `${filenamePrefix}-${uuidv4()}.jpeg`);
-    fs.writeFileSync(filePath, content);
-    return filePath;
-};
 
 describe("UserController (e2e)", () => {
     let app: INestApplication;
