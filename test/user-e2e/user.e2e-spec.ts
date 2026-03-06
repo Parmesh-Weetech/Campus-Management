@@ -4,9 +4,56 @@ import * as fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
 import { defaultBeforeAll, setupAdminUser, setupProfessorUser, setupStudentUser } from "../utils/commonHooks";
 import { generatePhoneNumber } from "../../src/app/user/helper/utils";
+import { PROFILE_PHOTO_FILE_PATH, PROFILE_THUMBNAIL_FILE_PATH } from "../../src/app/user/helper/paths";
 import request from 'supertest';
 import { UserStatus } from "../../src/app/user/types/user-status";
 import { UserRole } from "../../src/app/user/types/user-role";
+
+const PROJECT_ROOT = path.resolve(__dirname, '..', '..');
+const ABS_PROFILE_PHOTO_DIR = path.resolve(PROJECT_ROOT, PROFILE_PHOTO_FILE_PATH);
+const ABS_PROFILE_THUMBNAIL_DIR = path.resolve(PROJECT_ROOT, PROFILE_THUMBNAIL_FILE_PATH);
+
+const normalizeStoredFilename = (value: string): string => {
+    return path.basename(value.trim().replace(/^["']|["']$/g, ''));
+};
+
+const extractFilename = (response: { body: any; text: string }): string | undefined => {
+    if (typeof response.body === 'string') {
+        return normalizeStoredFilename(response.body);
+    }
+
+    if (response.body && typeof response.body === 'object') {
+        const candidates = [
+            response.body.fileKey,
+            response.body.data,
+            response.body.name,
+            response.body.filename,
+            response.text
+        ];
+
+        const firstString = candidates.find((val) => typeof val === 'string');
+        if (typeof firstString === 'string' && firstString.length > 0) {
+            return normalizeStoredFilename(firstString);
+        }
+        return undefined;
+    }
+
+    if (typeof response.text === 'string' && response.text.length > 0) {
+        return normalizeStoredFilename(response.text);
+    }
+
+    return undefined;
+};
+
+const createTempImage = (tmpDir: string, filenamePrefix: string, content: string): string => {
+    if (!fs.existsSync(tmpDir)) {
+        fs.mkdirSync(tmpDir, { recursive: true });
+    }
+
+    const filePath = path.join(tmpDir, `${filenamePrefix}-${uuidv4()}.jpeg`);
+    fs.writeFileSync(filePath, content);
+    return filePath;
+};
 
 describe("UserController (e2e)", () => {
     let app: INestApplication;
@@ -22,6 +69,9 @@ describe("UserController (e2e)", () => {
     let newUserName: string;
     let newUserPhoneNumber: string;
     let randomId = uuidv4();
+    const tempFiles: string[] = [];
+    const uploadedProfilePhotos: string[] = [];
+    const uploadedProfileThumbnails: string[] = [];
 
     beforeAll(async () => {
         app = await defaultBeforeAll();
@@ -123,10 +173,30 @@ describe("UserController (e2e)", () => {
     });
 
     afterAll(async () => {
+        for (const filePath of tempFiles) {
+            if (fs.existsSync(filePath)) {
+                fs.rmSync(filePath, { force: true });
+            }
+        }
+
+        for (const fileName of uploadedProfilePhotos) {
+            const fullPath = path.join(ABS_PROFILE_PHOTO_DIR, fileName);
+            if (fs.existsSync(fullPath)) {
+                fs.rmSync(fullPath, { force: true });
+            }
+        }
+
+        for (const fileName of uploadedProfileThumbnails) {
+            const fullPath = path.join(ABS_PROFILE_THUMBNAIL_DIR, fileName);
+            if (fs.existsSync(fullPath)) {
+                fs.rmSync(fullPath, { force: true });
+            }
+        }
+
         await app.close();
     });
 
-    describe("User Profile Lifecycle GET /api/user/profile", () => {
+    describe("User Profile Lifecycle", () => {
         it('Admin can access their own profile', async () => {
             const response = await request(app.getHttpServer())
                 .get('/api/user/profile')
@@ -222,30 +292,22 @@ describe("UserController (e2e)", () => {
             await request(app.getHttpServer())
                 .get(`/api/user/profile/${adminId}`)
                 .set('Authorization', `Bearer ${studentToken}`)
-            expect(403);
+                .expect(403);
         });
 
         it('Student cannot access professor profile', async () => {
             await request(app.getHttpServer())
                 .get(`/api/user/profile/${professorId}`)
                 .set('Authorization', `Bearer ${studentToken}`)
-            expect(403);
+                .expect(403);
         });
     });
 
-    describe('User can upload their profile-photo and thumbnail photo', () => {
+    describe('User can upload their profile-photo', () => {
         it('Should upload profile-photo for admin', async () => {
-            // create temp file
             const tmpDir = path.join(__dirname, '..', '..', 'assets', 'profile-photo');
-
-            if (!fs.existsSync(tmpDir)) {
-                fs.mkdirSync(tmpDir, { recursive: true });
-            }
-
-            const filePath = path.join(tmpDir, `test-student-${uuidv4()}.jpeg`);
-
-            // create dummy image file
-            fs.writeFileSync(filePath, 'dummy-image-content-admin');
+            const filePath = createTempImage(tmpDir, 'test-admin', 'dummy-image-content-admin');
+            tempFiles.push(filePath);
 
             const response = await request(app.getHttpServer())
                 .post(`/api/user/upload/profile-photo`)
@@ -253,33 +315,16 @@ describe("UserController (e2e)", () => {
                 .attach('file', filePath)
                 .expect(200)
 
-            // Normalise filename from response (could be returned as body string or text)
-            let filename: string | undefined;
-            if (typeof response.body === 'string') filename = response.body;
-            else if (response.body && typeof response.body === 'object') {
-                filename =
-                    response.body.fileKey ||
-                    response.body.data ||
-                    response.body.name ||
-                    response.body.filename ||
-                    response.text;
-            } else filename = response.text;
+            const filename = extractFilename(response);
 
             expect(filename).toBeDefined();
+            uploadedProfilePhotos.push(filename as string);
         });
 
         it('Should upload profile-photo for professor', async () => {
-            // create temp file
             const tmpDir = path.join(__dirname, '..', '..', 'assets', 'profile-photo');
-
-            if (!fs.existsSync(tmpDir)) {
-                fs.mkdirSync(tmpDir, { recursive: true });
-            }
-
-            const filePath = path.join(tmpDir, `test-professor-${uuidv4()}.jpeg`);
-
-            // create dummy image file
-            fs.writeFileSync(filePath, 'dummy-image-content-professor');
+            const filePath = createTempImage(tmpDir, 'test-professor', 'dummy-image-content-professor');
+            tempFiles.push(filePath);
 
             const response = await request(app.getHttpServer())
                 .post(`/api/user/upload/profile-photo`)
@@ -287,33 +332,16 @@ describe("UserController (e2e)", () => {
                 .attach('file', filePath)
                 .expect(200)
 
-            // Normalise filename from response (could be returned as body string or text)
-            let filename: string | undefined;
-            if (typeof response.body === 'string') filename = response.body;
-            else if (response.body && typeof response.body === 'object') {
-                filename =
-                    response.body.fileKey ||
-                    response.body.data ||
-                    response.body.name ||
-                    response.body.filename ||
-                    response.text;
-            } else filename = response.text;
+            const filename = extractFilename(response);
 
             expect(filename).toBeDefined();
+            uploadedProfilePhotos.push(filename as string);
         });
 
         it('Should upload profile-photo for student', async () => {
-            // create temp file
             const tmpDir = path.join(__dirname, '..', '..', 'assets', 'profile-photo');
-
-            if (!fs.existsSync(tmpDir)) {
-                fs.mkdirSync(tmpDir, { recursive: true });
-            }
-
-            const filePath = path.join(tmpDir, `test-student-${uuidv4()}.jpeg`);
-
-            // create dummy image file
-            fs.writeFileSync(filePath, 'dummy-image-content-student');
+            const filePath = createTempImage(tmpDir, 'test-student', 'dummy-image-content-student');
+            tempFiles.push(filePath);
 
             const response = await request(app.getHttpServer())
                 .post(`/api/user/upload/profile-photo`)
@@ -321,19 +349,63 @@ describe("UserController (e2e)", () => {
                 .attach('file', filePath)
                 .expect(200)
 
-            // Normalise filename from response (could be returned as body string or text)
-            let filename: string | undefined;
-            if (typeof response.body === 'string') filename = response.body;
-            else if (response.body && typeof response.body === 'object') {
-                filename =
-                    response.body.fileKey ||
-                    response.body.data ||
-                    response.body.name ||
-                    response.body.filename ||
-                    response.text;
-            } else filename = response.text;
+            const filename = extractFilename(response);
 
             expect(filename).toBeDefined();
+            uploadedProfilePhotos.push(filename as string);
+        });
+    });
+
+    describe('User can upload their thumbnail-photo', () => {
+        it('Should upload thumbnail-photo for admin', async () => {
+            const tmpDir = path.join(__dirname, '..', '..', 'assets', 'thumbnail-photo');
+            const filePath = createTempImage(tmpDir, 'test-admin', 'dummy-image-content-admin');
+            tempFiles.push(filePath);
+
+            const response = await request(app.getHttpServer())
+                .post(`/api/user/upload/profile-thumbnail`)
+                .set('Authorization', `Bearer ${adminToken}`)
+                .attach('file', filePath)
+                .expect(200)
+
+            const filename = extractFilename(response);
+
+            expect(filename).toBeDefined();
+            uploadedProfileThumbnails.push(filename as string);
+        });
+
+        it('Should upload thumbnail-photo for professor', async () => {
+            const tmpDir = path.join(__dirname, '..', '..', 'assets', 'thumbnail-photo');
+            const filePath = createTempImage(tmpDir, 'test-professor', 'dummy-image-content-professor');
+            tempFiles.push(filePath);
+
+            const response = await request(app.getHttpServer())
+                .post(`/api/user/upload/profile-thumbnail`)
+                .set('Authorization', `Bearer ${professorToken}`)
+                .attach('file', filePath)
+                .expect(200)
+
+            const filename = extractFilename(response);
+
+            expect(filename).toBeDefined();
+            uploadedProfileThumbnails.push(filename as string);
+        });
+
+        it('Should upload thumbnail-photo for student', async () => {
+            const tmpDir = path.join(__dirname, '..', '..', 'assets', 'thumbnail-photo');
+            const filePath = createTempImage(tmpDir, 'test-student', 'dummy-image-content-student');
+            tempFiles.push(filePath);
+
+            const response = await request(app.getHttpServer())
+                .post(`/api/user/upload/profile-thumbnail`)
+                .set('Authorization', `Bearer ${studentToken}`)
+                .attach('file', filePath)
+                .expect(200)
+
+            const filename = extractFilename(response);
+
+            expect(filename).toBeDefined();
+            uploadedProfileThumbnails.push(filename as string);
         });
     })
 })

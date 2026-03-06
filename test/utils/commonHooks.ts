@@ -4,7 +4,6 @@ import request from 'supertest';
 import { AppModule } from "../../src/app.module";
 import { setupApp } from "../../src/setup-app";
 import { mockAdmin } from "../../test/auth-e2e/auth-mock-data";
-import { UserStatus } from "../../src/app/user/types/user-status";
 
 export const defaultBeforeAll = async (): Promise<INestApplication> => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -54,13 +53,48 @@ export const setupProfessorUser = async (
     email: string,
     password: string
 ): Promise<string> => {
-    const loginResponse = await request(app.getHttpServer())
+    const server = app.getHttpServer();
+
+    let loginResponse = await request(server)
         .post('/api/auth/login')
         .send({
             email,
             password
-        })
-        .expect(200);
+        });
+
+    if (loginResponse.status !== 200) {
+        const { token: adminToken } = await setupAdminUser(app);
+
+        const uniquePhone = `9${Date.now().toString().slice(-9)}`;
+        const createResponse = await request(server)
+            .post('/api/user/create/professor')
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({
+                name: 'E2E Professor',
+                email,
+                phoneNumber: uniquePhone,
+                password
+            });
+
+        if (createResponse.status !== 201 && createResponse.status !== 409) {
+            throw new InternalServerErrorException(
+                `Failed to create professor test user. status=${createResponse.status}, body=${JSON.stringify(createResponse.body)}`
+            );
+        }
+
+        loginResponse = await request(server)
+            .post('/api/auth/login')
+            .send({
+                email,
+                password,
+            });
+
+        if (loginResponse.status !== 200) {
+            throw new InternalServerErrorException(
+                `Failed to login professor test user after fallback create. status=${loginResponse.status}, body=${JSON.stringify(loginResponse.body)}`
+            );
+        }
+    }
 
     expect(loginResponse.body.data).toBeDefined();
     expect(loginResponse.body.data.accessToken).toBeDefined();
@@ -77,13 +111,48 @@ export const setupStudentUser = async (
     email: string,
     password: string
 ): Promise<string> => {
-    const loginResponse = await request(app.getHttpServer())
+    const server = app.getHttpServer();
+
+    let loginResponse = await request(server)
         .post('/api/auth/login')
         .send({
             email,
             password
-        })
-        .expect(200);
+        });
+
+    if (loginResponse.status !== 200) {
+        const { token: adminToken } = await setupAdminUser(app);
+
+        const uniquePhone = `8${Date.now().toString().slice(-9)}`;
+        const createResponse = await request(server)
+            .post('/api/user/create/student')
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({
+                name: 'E2E Student',
+                email,
+                phoneNumber: uniquePhone,
+                password
+            });
+
+        if (createResponse.status !== 201 && createResponse.status !== 409) {
+            throw new InternalServerErrorException(
+                `Failed to create student test user. status=${createResponse.status}, body=${JSON.stringify(createResponse.body)}`
+            );
+        }
+
+        loginResponse = await request(server)
+            .post('/api/auth/login')
+            .send({
+                email,
+                password,
+            });
+
+        if (loginResponse.status !== 200) {
+            throw new InternalServerErrorException(
+                `Failed to login student test user after fallback create. status=${loginResponse.status}, body=${JSON.stringify(loginResponse.body)}`
+            );
+        }
+    }
 
     expect(loginResponse.body.data).toBeDefined();
     expect(loginResponse.body.data.accessToken).toBeDefined();

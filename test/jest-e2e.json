@@ -26,6 +26,7 @@
     "src/app/common/helpers",
     "src/app/common/infra",
     "src/app/config",
-    "src/app/common/logger"
+    "src/app/common/logger",
+    "src/app/user/helper"
   ]
 }

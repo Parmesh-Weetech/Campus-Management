@@ -13,8 +13,8 @@ describe('AttendanceController (e2e)', () => {
     let professorId: string;
     let studentToken: string;
     let studentId: string;
-    let professorMockData: { email: string, password: string, id: string }
-    let studentMockData: { email: string, password: string, id: string }
+    let professorMockData: { email: string, password: string }
+    let studentMockData: { email: string, password: string }
 
     let date: string;
     let adminEntryAttendanceId: string;
@@ -30,17 +30,25 @@ describe('AttendanceController (e2e)', () => {
 
         // Get professor mock data
         professorMockData = mockProfessor();
-        professorId = professorMockData.id;
 
         // Login Professor
         professorToken = await setupProfessorUser(app, professorMockData.email, professorMockData.password);
+        const professorProfileResponse = await request(server)
+            .get('/api/user/profile')
+            .set('Authorization', `Bearer ${professorToken}`)
+            .expect(200);
+        professorId = professorProfileResponse.body.data.id;
 
         // Get student mock data
         studentMockData = mockStudent();
-        studentId = studentMockData.id;
 
         // Login Student
         studentToken = await setupStudentUser(app, studentMockData.email, studentMockData.password);
+        const studentProfileResponse = await request(server)
+            .get('/api/user/profile')
+            .set('Authorization', `Bearer ${studentToken}`)
+            .expect(200);
+        studentId = studentProfileResponse.body.data.id;
 
         date = formatDateAsYYYYMMDD(new Date());
     });
@@ -240,8 +248,6 @@ describe('AttendanceController (e2e)', () => {
                 const response = await request(server)
                     .get('/api/attendance/list')
                     .query({
-                        page: 1,
-                        size: 10,
                         studentId
                     })
                     .set('Authorization', `Bearer ${adminToken}`)
@@ -261,8 +267,6 @@ describe('AttendanceController (e2e)', () => {
                 const response = await request(server)
                     .get('/api/attendance/list')
                     .query({
-                        page: 1,
-                        size: 10,
                         studentId,
                         className: "Social Science"
                     })
@@ -283,10 +287,8 @@ describe('AttendanceController (e2e)', () => {
                 const response = await request(server)
                     .get('/api/attendance/list')
                     .query({
-                        page: 1,
-                        size: 10,
                         studentId,
-                        month: '2026-03'
+                        month: date.slice(0, 7)
                     })
                     .set('Authorization', `Bearer ${adminToken}`)
                     .expect(200);
@@ -305,8 +307,6 @@ describe('AttendanceController (e2e)', () => {
                 await request(server)
                     .get('/api/attendance/list')
                     .query({
-                        page: 1,
-                        size: 10,
                         studentId
                     })
                     .set('Authorization', `Bearer ${studentToken}`)
@@ -316,10 +316,6 @@ describe('AttendanceController (e2e)', () => {
             it('Should give error on missing studentId', async () => {
                 await request(server)
                     .get('/api/attendance/list')
-                    .query({
-                        page: 1,
-                        size: 10
-                    })
                     .set('Authorization', `Bearer ${professorToken}`)
                     .expect(400);
             });

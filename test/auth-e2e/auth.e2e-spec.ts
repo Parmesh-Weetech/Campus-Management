@@ -18,6 +18,8 @@ describe('AuthController (e2e)', () => {
         defaultPassword = user.password;
     });
 
+    afterAll(async () => await app.close())
+
     describe('POST /api/auth/login Master Admin Login', () => {
         it('FAILURE: POST - Login with invalid credentials', async () => {
             await request(app.getHttpServer())
@@ -37,7 +39,7 @@ describe('AuthController (e2e)', () => {
                     email: defaultEmail,
                     password: defaultPassword
                 })
-                .expect(201);
+                .expect(200);
 
             expect(response.body.data).toHaveProperty('accessToken');
             expect(response.body.data).toHaveProperty('refreshToken');

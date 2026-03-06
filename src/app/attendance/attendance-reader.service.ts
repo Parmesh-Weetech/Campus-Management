@@ -12,11 +12,12 @@ export class AttendanceReaderService {
     ) { }
 
     async findByStudentDateClass(studentId: string, date: string, className: string): Promise<Attendance | null> {
+        console.log(date, className, studentId)
         return await this.attendanceRepository.findOne({
             where: {
                 student: { id: studentId },
-                date,
-                className
+                date: date,
+                className: className
             }
         });
     }
