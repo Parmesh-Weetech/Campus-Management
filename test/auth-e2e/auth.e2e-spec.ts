@@ -7,11 +7,13 @@ import { RefreshToken } from "../../src/app/refresh-token/entities/refresh-token
 
 describe('AuthController (e2e)', () => {
     let app: INestApplication;
+    let server;
     let defaultEmail: string;
     let defaultPassword: string;
 
     beforeAll(async () => {
         app = await defaultBeforeAll();
+        server = app.getHttpServer();
 
         const user = mockAdmin();
         defaultEmail = user.email;
@@ -31,7 +33,7 @@ describe('AuthController (e2e)', () => {
 
     describe('POST /api/auth/login Master Admin Login', () => {
         it('FAILURE: POST - Login with invalid credentials', async () => {
-            await request(app.getHttpServer())
+            await request(server)
                 .post('/api/auth/login')
                 .send({
                     email: defaultEmail,
@@ -42,7 +44,7 @@ describe('AuthController (e2e)', () => {
 
         it('SUCCESS: POST - Login with master admin credentials', async () => {
 
-            const response = await request(app.getHttpServer())
+            const response = await request(server)
                 .post('/api/auth/login')
                 .send({
                     email: defaultEmail,
@@ -61,7 +63,7 @@ describe('AuthController (e2e)', () => {
         });
 
         it('Should give error on missing field', async () => {
-            const response = await request(app.getHttpServer())
+            const response = await request(server)
                 .post('/api/auth/login')
                 .send({
                     password: defaultPassword
