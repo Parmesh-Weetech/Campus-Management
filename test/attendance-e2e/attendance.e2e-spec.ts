@@ -6,6 +6,10 @@ import { formatDateAsYYYYMMDD } from "../utils/formatted-date";
 import { DataSource } from "typeorm";
 import { Attendance } from "../../src/app/attendance/entities/attendance.entity";
 import { RefreshToken } from "../../src/app/refresh-token/entities/refresh-token.entity";
+import { User } from "../../src/app/user/entities/user.entity";
+import * as path from 'path';
+import * as fs from 'fs';
+import * as jwt from 'jsonwebtoken';
 
 describe('AttendanceController (e2e)', () => {
     let server;
@@ -18,6 +22,9 @@ describe('AttendanceController (e2e)', () => {
     let studentId: string;
     let professorMockData: { email: string, password: string }
     let studentMockData: { email: string, password: string }
+    let professorRefreshToken: string;
+    let expiredProfessorAccessToken: string;
+    let notBeforeProfessorAccessToken: string;
 
     let date: string;
     let adminEntryAttendanceId: string;
@@ -47,6 +54,37 @@ describe('AttendanceController (e2e)', () => {
         expect(professorProfileResponse.body.data).toHaveProperty('email');
         professorId = professorProfileResponse.body.data.id;
 
+        const professorLoginResponse = await request(server)
+            .post('/api/auth/login')
+            .send({
+                email: professorMockData.email,
+                password: professorMockData.password
+            })
+            .expect(200);
+        professorRefreshToken = professorLoginResponse.body.data.refreshToken;
+
+        const privateKeyPath = path.resolve(process.cwd(), process.env.AUTH_PRIVATE_KEY_PATH ?? 'secrets/jwt_private.pem');
+        const privateKey = fs.readFileSync(privateKeyPath, 'utf8');
+        const issuer = process.env.JWT_ISSUER ?? 'localhost:3000';
+        const jwtPayload = {
+            userId: professorId,
+            email: professorMockData.email,
+            userRole: 'PROFESSOR'
+        };
+
+        expiredProfessorAccessToken = jwt.sign(jwtPayload, privateKey, {
+            algorithm: 'RS256',
+            issuer,
+            expiresIn: '-10s'
+        });
+
+        notBeforeProfessorAccessToken = jwt.sign(jwtPayload, privateKey, {
+            algorithm: 'RS256',
+            issuer,
+            expiresIn: '1h',
+            notBefore: '10m'
+        });
+
         // Get student mock data
         studentMockData = mockStudent();
 
@@ -69,6 +107,7 @@ describe('AttendanceController (e2e)', () => {
     afterAll(async () => {
         const dataSource = app.get(DataSource);
         const attendanceRepository = dataSource.getRepository(Attendance);
+        const userRepository = dataSource.getRepository(User);
         const attendanceIdsToDelete: string[] = [adminEntryAttendanceId, professorEntryAttendanceId]
             .filter((id): id is string => Boolean(id));
 
@@ -81,6 +120,22 @@ describe('AttendanceController (e2e)', () => {
             .delete()
             .from(RefreshToken)
             .execute();
+
+        const userIdsToDelete: string[] = [studentId, professorId].filter((id): id is string => Boolean(id));
+        if (userIdsToDelete.length > 0) {
+            await userRepository.delete(userIdsToDelete);
+        }
+
+        const testEmails = [studentMockData?.email, professorMockData?.email].filter(
+            (email): email is string => Boolean(email)
+        );
+        if (testEmails.length > 0) {
+            await userRepository
+                .createQueryBuilder()
+                .delete()
+                .where('email IN (:...emails)', { emails: testEmails })
+                .execute();
+        }
 
         await app.close();
     });
@@ -293,6 +348,25 @@ describe('AttendanceController (e2e)', () => {
                     .send({})
                     .expect(400);
             });
+
+            it('Should give error on invalid token', async () => {
+                await request(server)
+                    .patch(`/api/attendance/update/${professorEntryAttendanceId}`)
+                    .set('Authorization', 'Bearer invalid.token.value')
+                    .send({
+                        status: "PRESENT"
+                    })
+                    .expect(401);
+            });
+
+            it('Should give error on no token provided', async () => {
+                await request(server)
+                    .patch(`/api/attendance/update/${professorEntryAttendanceId}`)
+                    .send({
+                        status: "PRESENT"
+                    })
+                    .expect(401);
+            });
         });
 
         describe('List Attendance', () => {
@@ -400,6 +474,75 @@ describe('AttendanceController (e2e)', () => {
                     .set('Authorization', `Bearer ${professorToken}`)
                     .expect(400);
             });
+
+            it('Should give error on invalid token', async () => {
+                await request(server)
+                    .get('/api/attendance/list')
+                    .query({
+                        studentId
+                    })
+                    .set('Authorization', 'Bearer invalid.token.value')
+                    .expect(401);
+            });
+
+            it('Should give error on no token provided', async () => {
+                await request(server)
+                    .get('/api/attendance/list')
+                    .query({
+                        studentId
+                    })
+                    .expect(401);
+            });
+
+            it('Should give error on invalid auth format', async () => {
+                await request(server)
+                    .get('/api/attendance/list')
+                    .query({
+                        studentId
+                    })
+                    .set('Authorization', 'Basic abc123')
+                    .expect(401);
+            });
+
+            it('Should give error on malformed bearer token', async () => {
+                await request(server)
+                    .get('/api/attendance/list')
+                    .query({
+                        studentId
+                    })
+                    .set('Authorization', 'Bearer')
+                    .expect(401);
+            });
+
+            it('Should give error when refresh token is used as access token', async () => {
+                await request(server)
+                    .get('/api/attendance/list')
+                    .query({
+                        studentId
+                    })
+                    .set('Authorization', `Bearer ${professorRefreshToken}`)
+                    .expect(401);
+            });
+
+            it('Should give error on expired access token', async () => {
+                await request(server)
+                    .get('/api/attendance/list')
+                    .query({
+                        studentId
+                    })
+                    .set('Authorization', `Bearer ${expiredProfessorAccessToken}`)
+                    .expect(401);
+            });
+
+            it('Should give error on not-before access token', async () => {
+                await request(server)
+                    .get('/api/attendance/list')
+                    .query({
+                        studentId
+                    })
+                    .set('Authorization', `Bearer ${notBeforeProfessorAccessToken}`)
+                    .expect(401);
+            });
         });
 
         describe('Get Attendance By Date and Class', () => {
@@ -472,6 +615,55 @@ describe('AttendanceController (e2e)', () => {
                     .set('Authorization', `Bearer ${professorToken}`)
                     .expect(404)
             });
+
+            it('Should use today date when date is omitted', async () => {
+                const response = await request(server)
+                    .get(`/api/attendance/${studentId}`)
+                    .query({
+                        className: professorClassName
+                    })
+                    .set('Authorization', `Bearer ${professorToken}`)
+                    .expect(200);
+
+                expect(response.body).toEqual(
+                    expect.objectContaining({
+                        success: true,
+                        data: expect.any(Object)
+                    })
+                );
+            });
+
+            it('Should give error on invalid studentId', async () => {
+                await request(server)
+                    .get('/api/attendance/not-a-uuid')
+                    .query({
+                        date,
+                        className: professorClassName
+                    })
+                    .set('Authorization', `Bearer ${professorToken}`)
+                    .expect(400);
+            });
+
+            it('Should give error on invalid token', async () => {
+                await request(server)
+                    .get(`/api/attendance/${studentId}`)
+                    .query({
+                        date,
+                        className: professorClassName
+                    })
+                    .set('Authorization', 'Bearer invalid.token.value')
+                    .expect(401);
+            });
+
+            it('Should give error on no token provided', async () => {
+                await request(server)
+                    .get(`/api/attendance/${studentId}`)
+                    .query({
+                        date,
+                        className: professorClassName
+                    })
+                    .expect(401);
+            });
         });
 
         describe('Delete Attendance', () => {
@@ -516,6 +708,33 @@ describe('AttendanceController (e2e)', () => {
                 await request(server)
                     .delete(`/api/attendance/`)
                     .set('Authorization', `Bearer ${professorToken}`)
+                    .expect(404);
+            });
+
+            it('Should give error on invalid attendanceId', async () => {
+                await request(server)
+                    .delete('/api/attendance/not-a-uuid')
+                    .set('Authorization', `Bearer ${adminToken}`)
+                    .expect(400);
+            });
+
+            it('Should give error on invalid token', async () => {
+                await request(server)
+                    .delete(`/api/attendance/${professorEntryAttendanceId}`)
+                    .set('Authorization', 'Bearer invalid.token.value')
+                    .expect(401);
+            });
+
+            it('Should give error on no token provided', async () => {
+                await request(server)
+                    .delete(`/api/attendance/${professorEntryAttendanceId}`)
+                    .expect(401);
+            });
+
+            it('Should give error when record does not exist', async () => {
+                await request(server)
+                    .delete('/api/attendance/cf1796ce-5f99-4d06-a5ec-df74a0c1d7f8')
+                    .set('Authorization', `Bearer ${adminToken}`)
                     .expect(404);
             });
         })
