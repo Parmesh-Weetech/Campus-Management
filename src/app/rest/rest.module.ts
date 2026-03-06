@@ -8,6 +8,7 @@ import { JwtModule } from "../jwt/jwt.module";
 import { RefreshTokenModule } from "../refresh-token/refresh-token.module";
 import { APP_GUARD } from "@nestjs/core";
 import { AuthGuard } from "../auth/guards/auth.guard";
+import { AttendanceModule } from "../attendance/attendance.module";
 
 @Module({
     imports: [
@@ -17,7 +18,8 @@ import { AuthGuard } from "../auth/guards/auth.guard";
         StudentModule,
         AuthModule,
         JwtModule,
-        RefreshTokenModule
+        RefreshTokenModule,
+        AttendanceModule
     ],
     providers: [
         {

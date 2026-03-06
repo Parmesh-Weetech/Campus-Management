@@ -27,7 +27,7 @@ export class AuthGuard implements CanActivate {
         const authHeader = request.headers.authorization;
 
         if (!authHeader) {
-            throw new UnauthorizedException('Authorization header missing');
+            throw new UnauthorizedException('You must be loggedIn!');
         }
 
         const parts = authHeader.split(' ');
