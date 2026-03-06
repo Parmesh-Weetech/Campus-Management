@@ -6,6 +6,7 @@ import { formatDateAsYYYYMMDD } from "../utils/formatted-date";
 import { DataSource } from "typeorm";
 import { Attendance } from "../../src/app/attendance/entities/attendance.entity";
 import { RefreshToken } from "../../src/app/refresh-token/entities/refresh-token.entity";
+import { User } from "../../src/app/user/entities/user.entity";
 
 describe('AttendanceController (e2e)', () => {
     let server;
@@ -69,6 +70,7 @@ describe('AttendanceController (e2e)', () => {
     afterAll(async () => {
         const dataSource = app.get(DataSource);
         const attendanceRepository = dataSource.getRepository(Attendance);
+        const userRepository = dataSource.getRepository(User);
         const attendanceIdsToDelete: string[] = [adminEntryAttendanceId, professorEntryAttendanceId]
             .filter((id): id is string => Boolean(id));
 
@@ -81,6 +83,22 @@ describe('AttendanceController (e2e)', () => {
             .delete()
             .from(RefreshToken)
             .execute();
+
+        const userIdsToDelete: string[] = [studentId, professorId].filter((id): id is string => Boolean(id));
+        if (userIdsToDelete.length > 0) {
+            await userRepository.delete(userIdsToDelete);
+        }
+
+        const testEmails = [studentMockData?.email, professorMockData?.email].filter(
+            (email): email is string => Boolean(email)
+        );
+        if (testEmails.length > 0) {
+            await userRepository
+                .createQueryBuilder()
+                .delete()
+                .where('email IN (:...emails)', { emails: testEmails })
+                .execute();
+        }
 
         await app.close();
     });

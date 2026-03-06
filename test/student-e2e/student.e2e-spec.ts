@@ -4,7 +4,9 @@ import { mockProfessor, mockStudent } from "../utils/mock-data";
 import request from 'supertest';
 import { formatDateAsYYYYMMDD } from "../utils/formatted-date";
 import { DataSource } from "typeorm";
+import { Attendance } from "../../src/app/attendance/entities/attendance.entity";
 import { RefreshToken } from "../../src/app/refresh-token/entities/refresh-token.entity";
+import { User } from "../../src/app/user/entities/user.entity";
 
 describe('StudentController (e2e)', () => {
     let server;
@@ -13,6 +15,7 @@ describe('StudentController (e2e)', () => {
     let adminToken: string;
     let professorToken: string;
     let studentToken: string;
+    let professorId: string;
     let studentId: string;
     let professorMockData: { email: string, password: string };
     let studentMockData: { email: string, password: string };
@@ -36,6 +39,12 @@ describe('StudentController (e2e)', () => {
 
         // Login Professor
         professorToken = await setupProfessorUser(app, professorMockData.email, professorMockData.password);
+        const professorProfileResponse = await request(server)
+            .get('/api/user/profile')
+            .set('Authorization', `Bearer ${professorToken}`)
+            .expect(200);
+        expect(professorProfileResponse.body.data).toHaveProperty('id');
+        professorId = professorProfileResponse.body.data.id;
 
         // Get student mock data
         studentMockData = mockStudent();
@@ -102,34 +111,37 @@ describe('StudentController (e2e)', () => {
     });
 
     afterAll(async () => {
-        const cleanupRequests: Array<Promise<unknown>> = [];
-
-        if (adminEntryAttendanceId) {
-            cleanupRequests.push(
-                request(server)
-                    .delete(`/api/attendance/${adminEntryAttendanceId}`)
-                    .set('Authorization', `Bearer ${adminToken}`)
-            );
-        }
-
-        if (professorEntryAttendanceId) {
-            cleanupRequests.push(
-                request(server)
-                    .delete(`/api/attendance/${professorEntryAttendanceId}`)
-                    .set('Authorization', `Bearer ${adminToken}`)
-            );
-        }
-
-        if (cleanupRequests.length > 0) {
-            await Promise.allSettled(cleanupRequests);
-        }
-
         const dataSource = app.get(DataSource);
+        const attendanceRepository = dataSource.getRepository(Attendance);
+        const userRepository = dataSource.getRepository(User);
+        const attendanceIdsToDelete: string[] = [adminEntryAttendanceId, professorEntryAttendanceId]
+            .filter((id): id is string => Boolean(id));
+
+        if (attendanceIdsToDelete.length > 0) {
+            await attendanceRepository.delete(attendanceIdsToDelete);
+        }
+
         await dataSource
             .createQueryBuilder()
             .delete()
             .from(RefreshToken)
             .execute();
+
+        const userIdsToDelete: string[] = [studentId, professorId].filter((id): id is string => Boolean(id));
+        if (userIdsToDelete.length > 0) {
+            await userRepository.delete(userIdsToDelete);
+        }
+
+        const testEmails = [studentMockData?.email, professorMockData?.email].filter(
+            (email): email is string => Boolean(email)
+        );
+        if (testEmails.length > 0) {
+            await userRepository
+                .createQueryBuilder()
+                .delete()
+                .where('email IN (:...emails)', { emails: testEmails })
+                .execute();
+        }
 
         await app.close();
     });
