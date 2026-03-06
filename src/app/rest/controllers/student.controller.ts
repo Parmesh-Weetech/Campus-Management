@@ -8,7 +8,7 @@ import { AttendanceListResDTO } from "../dto/response/attendance-list-res.dto";
 import { ListStudentAttendanceReqDTO } from "../dto/request/list-student-attendance-req.dto";
 import { AttendanceResDTO } from "../dto/response/attendance-res.dto";
 import { AttendanceByDateClassReqDTO } from "../dto/request/get-attendance-by-date-class-req.dto";
-import { ApiBearerAuth, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
+import { ApiBearerAuth, ApiResponse, ApiTags } from "@nestjs/swagger";
 
 @Controller({ path: 'student' })
 @ApiTags('student')
@@ -21,10 +21,6 @@ export class StudentController {
     @Get('attendance/list')
     @Role(UserRole.STUDENT)
     @ApiResponse({ status: 200, type: AttendanceListResDTO })
-    @ApiQuery({ name: 'page', required: false })
-    @ApiQuery({ name: 'size', required: false })
-    @ApiQuery({ name: 'month', required: false })
-    @ApiQuery({ name: 'className', required: false })
     async listAttendance(
         @Query() listStudentAttendanceReqDTO: ListStudentAttendanceReqDTO,
         @GetCurrentUser() user: User
@@ -35,8 +31,6 @@ export class StudentController {
     @Get('attendance')
     @Role(UserRole.STUDENT)
     @ApiResponse({ status: 200, type: AttendanceResDTO })
-    @ApiQuery({ name: 'date', required: true })
-    @ApiQuery({ name: 'className', required: true })
     async getAttendanceByDateAndClass(
         @Query() query: AttendanceByDateClassReqDTO,
         @GetCurrentUser() user: User
