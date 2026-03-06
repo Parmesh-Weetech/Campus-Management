@@ -8,6 +8,9 @@ import { PROFILE_PHOTO_FILE_PATH, PROFILE_THUMBNAIL_FILE_PATH } from "../../src/
 import request from 'supertest';
 import { UserStatus } from "../../src/app/user/types/user-status";
 import { UserRole } from "../../src/app/user/types/user-role";
+import { DataSource } from "typeorm";
+import { User } from "../../src/app/user/entities/user.entity";
+import { RefreshToken } from "../../src/app/refresh-token/entities/refresh-token.entity";
 
 const PROJECT_ROOT = path.resolve(__dirname, '..', '..');
 const ABS_PROFILE_PHOTO_DIR = path.resolve(PROJECT_ROOT, PROFILE_PHOTO_FILE_PATH);
@@ -105,7 +108,7 @@ describe("UserController (e2e)", () => {
         professorId = successResponseProfessor.body.data.id;
 
         // Should get error as invalid token
-        const errorResponseProfessor = await request(app.getHttpServer())
+        await request(app.getHttpServer())
             .post('/api/user/create/professor')
             .set('Authorization', `Bearer randomestringwithnovalue`)
             .send({
@@ -192,6 +195,21 @@ describe("UserController (e2e)", () => {
                 fs.rmSync(fullPath, { force: true });
             }
         }
+
+        // No API as don't want the soft-delete.
+        const dataSource = app.get(DataSource);
+        const userRepository = dataSource.getRepository(User);
+        const userIdsToDelete: string[] = [studentId, professorId].filter((id): id is string => Boolean(id));
+
+        if (userIdsToDelete.length > 0) {
+            await userRepository.delete(userIdsToDelete);
+        }
+
+        await dataSource
+            .createQueryBuilder()
+            .delete()
+            .from(RefreshToken)
+            .execute();
 
         await app.close();
     });

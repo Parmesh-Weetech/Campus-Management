@@ -3,6 +3,9 @@ import request from 'supertest';
 import { defaultBeforeAll, setupAdminUser, setupProfessorUser, setupStudentUser } from "../utils/commonHooks";
 import { mockProfessor, mockStudent } from "../utils/mock-data";
 import { formatDateAsYYYYMMDD } from "../utils/formatted-date";
+import { DataSource } from "typeorm";
+import { Attendance } from "../../src/app/attendance/entities/attendance.entity";
+import { RefreshToken } from "../../src/app/refresh-token/entities/refresh-token.entity";
 
 describe('AttendanceController (e2e)', () => {
     let server;
@@ -54,6 +57,21 @@ describe('AttendanceController (e2e)', () => {
     });
 
     afterAll(async () => {
+        const dataSource = app.get(DataSource);
+        const attendanceRepository = dataSource.getRepository(Attendance);
+        const attendanceIdsToDelete: string[] = [adminEntryAttendanceId, professorEntryAttendanceId]
+            .filter((id): id is string => Boolean(id));
+
+        if (attendanceIdsToDelete.length > 0) {
+            await attendanceRepository.delete(attendanceIdsToDelete);
+        }
+
+        await dataSource
+            .createQueryBuilder()
+            .delete()
+            .from(RefreshToken)
+            .execute();
+
         await app.close();
     });
 

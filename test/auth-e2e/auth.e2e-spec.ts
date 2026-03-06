@@ -2,6 +2,8 @@ import { INestApplication } from "@nestjs/common";
 import { defaultBeforeAll } from "../utils/commonHooks";
 import { mockAdmin } from "./auth-mock-data";
 import request from 'supertest';
+import { DataSource } from "typeorm";
+import { RefreshToken } from "../../src/app/refresh-token/entities/refresh-token.entity";
 
 describe('AuthController (e2e)', () => {
     let app: INestApplication;
@@ -18,7 +20,16 @@ describe('AuthController (e2e)', () => {
         defaultPassword = user.password;
     });
 
-    afterAll(async () => await app.close())
+    afterAll(async () => {
+        const dataSource = app.get(DataSource);
+        await dataSource
+            .createQueryBuilder()
+            .delete()
+            .from(RefreshToken)
+            .execute();
+
+        await app.close();
+    })
 
     describe('POST /api/auth/login Master Admin Login', () => {
         it('FAILURE: POST - Login with invalid credentials', async () => {

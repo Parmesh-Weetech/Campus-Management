@@ -3,6 +3,8 @@ import { defaultBeforeAll, setupAdminUser, setupProfessorUser, setupStudentUser 
 import { mockProfessor, mockStudent } from "../utils/mock-data";
 import request from 'supertest';
 import { formatDateAsYYYYMMDD } from "../utils/formatted-date";
+import { DataSource } from "typeorm";
+import { RefreshToken } from "../../src/app/refresh-token/entities/refresh-token.entity";
 
 describe('StudentController (e2e)', () => {
     let server;
@@ -101,6 +103,13 @@ describe('StudentController (e2e)', () => {
         if (cleanupRequests.length > 0) {
             await Promise.allSettled(cleanupRequests);
         }
+
+        const dataSource = app.get(DataSource);
+        await dataSource
+            .createQueryBuilder()
+            .delete()
+            .from(RefreshToken)
+            .execute();
 
         await app.close();
     });
