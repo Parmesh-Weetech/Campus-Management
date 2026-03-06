@@ -58,12 +58,18 @@ describe("UserController (e2e)", () => {
                 password: newUserPassword,
                 phoneNumber: newUserPhoneNumber
             })
-            .expect(201)
+            .expect(201);
 
-        expect(successResponseProfessor.body.data).toBeDefined();
-        expect(successResponseProfessor.body.data.id).toBeDefined();
-        expect(successResponseProfessor.body.data.email).toBe(newUserEmail);
-        expect(successResponseProfessor.body.data.status).toBe(UserStatus.ACTIVE);
+        expect(successResponseProfessor.body).toEqual(
+            expect.objectContaining({
+                success: true,
+                data: expect.any(Object)
+            })
+        );
+        expect(successResponseProfessor.body.data).toHaveProperty('id');
+        expect(successResponseProfessor.body.data.email).toEqual(newUserEmail);
+        expect(successResponseProfessor.body.data.status).toEqual(UserStatus.ACTIVE);
+
         professorId = successResponseProfessor.body.data.id;
 
         // Should get error as invalid token
@@ -98,8 +104,13 @@ describe("UserController (e2e)", () => {
             })
             .expect(201);
 
-        expect(responseStudent.body.data).toBeDefined();
-        expect(responseStudent.body.data.id).toBeDefined();
+        expect(responseStudent.body).toEqual(
+            expect.objectContaining({
+                success: true,
+                data: expect.any(Object)
+            })
+        );
+        expect(responseStudent.body.data).toHaveProperty('id');
         expect(responseStudent.body.data.email).toBe(newUserEmail);
         expect(responseStudent.body.data.status).toBe(UserStatus.ACTIVE);
         studentId = responseStudent.body.data.id;
@@ -180,9 +191,16 @@ describe("UserController (e2e)", () => {
                 .set('Authorization', `Bearer ${adminToken}`)
                 .expect(200);
 
-            expect(response.body.data).toBeDefined();
-            expect(response.body.data.userRole).toBe(UserRole.ADMIN);
+            expect(response.body).toEqual(
+                expect.objectContaining({
+                    success: true,
+                    data: expect.any(Object)
+                })
+            );
+            expect(response.body.data).toHaveProperty('id');
+            expect(response.body.data).toHaveProperty('userRole');
             expect(response.body.data.email).toBeDefined();
+            expect(response.body.data.userRole).toBe(UserRole.ADMIN);
         });
 
         it('Professor can access their own profile', async () => {
@@ -191,9 +209,16 @@ describe("UserController (e2e)", () => {
                 .set('Authorization', `Bearer ${professorToken}`)
                 .expect(200);
 
-            expect(response.body.data).toBeDefined();
-            expect(response.body.data.userRole).toBe(UserRole.PROFESSOR);
+            expect(response.body).toEqual(
+                expect.objectContaining({
+                    success: true,
+                    data: expect.any(Object)
+                })
+            );
+            expect(response.body.data).toHaveProperty('id');
+            expect(response.body.data).toHaveProperty('userRole');
             expect(response.body.data.email).toBeDefined();
+            expect(response.body.data.userRole).toBe(UserRole.PROFESSOR);
         });
 
         it('Student can access their own profile', async () => {
@@ -202,9 +227,16 @@ describe("UserController (e2e)", () => {
                 .set('Authorization', `Bearer ${studentToken}`)
                 .expect(200);
 
-            expect(response.body.data).toBeDefined();
-            expect(response.body.data.userRole).toBe(UserRole.STUDENT);
+            expect(response.body).toEqual(
+                expect.objectContaining({
+                    success: true,
+                    data: expect.any(Object)
+                })
+            );
+            expect(response.body.data).toHaveProperty('id');
+            expect(response.body.data).toHaveProperty('userRole');
             expect(response.body.data.email).toBeDefined();
+            expect(response.body.data.userRole).toBe(UserRole.STUDENT);
         });
 
         it('Should return 401 if no token provided', async () => {
@@ -228,6 +260,14 @@ describe("UserController (e2e)", () => {
                 .set('Authorization', `Bearer ${adminToken}`)
                 .expect(200);
 
+            expect(response.body).toEqual(
+                expect.objectContaining({
+                    success: true,
+                    data: expect.any(Object)
+                })
+            );
+            expect(response.body.data).toHaveProperty('id');
+            expect(response.body.data).toHaveProperty('email');
             expect(response.body.data.email).toBeDefined();
             expect(response.body.data.id).toEqual(professorId);
         });
@@ -238,6 +278,14 @@ describe("UserController (e2e)", () => {
                 .set('Authorization', `Bearer ${adminToken}`)
                 .expect(200);
 
+            expect(response.body).toEqual(
+                expect.objectContaining({
+                    success: true,
+                    data: expect.any(Object)
+                })
+            );
+            expect(response.body.data).toHaveProperty('id');
+            expect(response.body.data).toHaveProperty('email');
             expect(response.body.data.email).toBeDefined();
             expect(response.body.data.id).toEqual(studentId);
         });
@@ -250,6 +298,14 @@ describe("UserController (e2e)", () => {
                 .set('Authorization', `Bearer ${professorToken}`)
                 .expect(200);
 
+            expect(response.body).toEqual(
+                expect.objectContaining({
+                    success: true,
+                    data: expect.any(Object)
+                })
+            );
+            expect(response.body.data).toHaveProperty('id');
+            expect(response.body.data).toHaveProperty('email');
             expect(response.body.data.email).toBeDefined();
             expect(response.body.data.id).toEqual(studentId);
         });
@@ -290,7 +346,7 @@ describe("UserController (e2e)", () => {
                 .post(`/api/user/upload/profile-photo`)
                 .set('Authorization', `Bearer ${adminToken}`)
                 .attach('file', filePath)
-                .expect(200)
+                .expect(200);
 
             const filename = extractFilename(response);
 
@@ -307,7 +363,7 @@ describe("UserController (e2e)", () => {
                 .post(`/api/user/upload/profile-photo`)
                 .set('Authorization', `Bearer ${professorToken}`)
                 .attach('file', filePath)
-                .expect(200)
+                .expect(200);
 
             const filename = extractFilename(response);
 
@@ -324,13 +380,71 @@ describe("UserController (e2e)", () => {
                 .post(`/api/user/upload/profile-photo`)
                 .set('Authorization', `Bearer ${studentToken}`)
                 .attach('file', filePath)
-                .expect(200)
+                .expect(200);
 
             const filename = extractFilename(response);
 
             expect(filename).toBeDefined();
             uploadedProfilePhotos.push(filename as string);
         });
+
+        it('Should give error on invalid file type', async () => {
+            const tmpDir = path.join(__dirname, '..', '..', 'assets', 'profile-photo');
+            if (!fs.existsSync(tmpDir)) {
+                fs.mkdirSync(tmpDir, { recursive: true });
+            }
+
+            const invalidFilePath = path.join(tmpDir, `test-invalid-${uuidv4()}.txt`);
+            fs.writeFileSync(invalidFilePath, 'not-an-image');
+            tempFiles.push(invalidFilePath);
+
+            const response = await request(app.getHttpServer())
+                .post(`/api/user/upload/profile-photo`)
+                .set('Authorization', `Bearer ${studentToken}`)
+                .attach('file', invalidFilePath)
+                .expect(400);
+
+            expect(response.body).toEqual(
+                expect.objectContaining({
+                    success: false,
+                    message: 'Invalid file type'
+                })
+            );
+        });
+
+        it('Should give error on no token', async () => {
+            const tmpDir = path.join(__dirname, '..', '..', 'assets', 'profile-photo');
+            const filePath = createTempImage(tmpDir, 'test-student', 'dummy-image-content-student');
+            tempFiles.push(filePath);
+
+            await request(app.getHttpServer())
+                .post(`/api/user/upload/profile-photo`)
+                .attach('file', filePath)
+                .expect(401)
+        });
+
+        it('Should give error on invalid token', async () => {
+            const tmpDir = path.join(__dirname, '..', '..', 'assets', 'profile-photo');
+            const filePath = createTempImage(tmpDir, 'test-student', 'dummy-image-content-student');
+            tempFiles.push(filePath);
+
+            await request(app.getHttpServer())
+                .post(`/api/user/upload/profile-photo`)
+                .set('Authorization', `Bearer invalid.token.withnodata`)
+                .attach('file', filePath)
+                .expect(401)
+        });
+
+        it('Should give error on missing file', async () => {
+            const tmpDir = path.join(__dirname, '..', '..', 'assets', 'profile-photo');
+            const filePath = createTempImage(tmpDir, 'test-student', 'dummy-image-content-student');
+            tempFiles.push(filePath);
+
+            await request(app.getHttpServer())
+                .post(`/api/user/upload/profile-photo`)
+                .set('Authorization', `Bearer ${studentToken}`)
+                .expect(400)
+        })
     });
 
     describe('User can upload their thumbnail-photo', () => {
@@ -343,7 +457,7 @@ describe("UserController (e2e)", () => {
                 .post(`/api/user/upload/profile-thumbnail`)
                 .set('Authorization', `Bearer ${adminToken}`)
                 .attach('file', filePath)
-                .expect(200)
+                .expect(200);
 
             const filename = extractFilename(response);
 
@@ -360,7 +474,7 @@ describe("UserController (e2e)", () => {
                 .post(`/api/user/upload/profile-thumbnail`)
                 .set('Authorization', `Bearer ${professorToken}`)
                 .attach('file', filePath)
-                .expect(200)
+                .expect(200);
 
             const filename = extractFilename(response);
 
@@ -377,12 +491,36 @@ describe("UserController (e2e)", () => {
                 .post(`/api/user/upload/profile-thumbnail`)
                 .set('Authorization', `Bearer ${studentToken}`)
                 .attach('file', filePath)
-                .expect(200)
+                .expect(200);
 
             const filename = extractFilename(response);
 
             expect(filename).toBeDefined();
             uploadedProfileThumbnails.push(filename as string);
+        });
+
+        it('Should give error on invalid file type', async () => {
+            const tmpDir = path.join(__dirname, '..', '..', 'assets', 'profile-photo');
+            if (!fs.existsSync(tmpDir)) {
+                fs.mkdirSync(tmpDir, { recursive: true });
+            }
+
+            const invalidFilePath = path.join(tmpDir, `test-invalid-${uuidv4()}.txt`);
+            fs.writeFileSync(invalidFilePath, 'not-an-image');
+            tempFiles.push(invalidFilePath);
+
+            const response = await request(app.getHttpServer())
+                .post(`/api/user/upload/profile-thumbnail`)
+                .set('Authorization', `Bearer ${studentToken}`)
+                .attach('file', invalidFilePath)
+                .expect(400);
+
+            expect(response.body).toEqual(
+                expect.objectContaining({
+                    success: false,
+                    message: 'Invalid file type'
+                })
+            );
         });
     })
 })

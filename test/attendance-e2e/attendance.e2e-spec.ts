@@ -42,6 +42,9 @@ describe('AttendanceController (e2e)', () => {
             .get('/api/user/profile')
             .set('Authorization', `Bearer ${professorToken}`)
             .expect(200);
+
+        expect(professorProfileResponse.body.data).toHaveProperty('id');
+        expect(professorProfileResponse.body.data).toHaveProperty('email');
         professorId = professorProfileResponse.body.data.id;
 
         // Get student mock data
@@ -53,6 +56,9 @@ describe('AttendanceController (e2e)', () => {
             .get('/api/user/profile')
             .set('Authorization', `Bearer ${studentToken}`)
             .expect(200);
+
+        expect(studentProfileResponse.body.data).toHaveProperty('id');
+        expect(studentProfileResponse.body.data).toHaveProperty('email');
         studentId = studentProfileResponse.body.data.id;
 
         date = formatDateAsYYYYMMDD(new Date());
@@ -98,7 +104,7 @@ describe('AttendanceController (e2e)', () => {
                         data: expect.any(Object)
                     })
                 );
-                expect(response.body.data.id).toBeDefined();
+                expect(response.body.data).toHaveProperty('id');
 
                 adminEntryAttendanceId = response.body.data.id;
             });
@@ -120,7 +126,7 @@ describe('AttendanceController (e2e)', () => {
                         data: expect.any(Object)
                     })
                 );
-                expect(response.body.data.id).toBeDefined();
+                expect(response.body.data).toHaveProperty('id');
 
                 professorEntryAttendanceId = response.body.data.id;
             });
@@ -136,6 +142,18 @@ describe('AttendanceController (e2e)', () => {
                     })
                     .expect(403);
             });
+
+            it('Should give conflict error on duplicate record', async () => {
+                await request(server)
+                    .post(`/api/attendance/create/${studentId}`)
+                    .set('Authorization', `Bearer ${professorToken}`)
+                    .send({
+                        date,
+                        status: "PRESENT",
+                        className: professorClassName
+                    })
+                    .expect(409)
+            })
 
             it('Should give error if studentId is not of student', async () => {
                 await request(server)
@@ -201,6 +219,7 @@ describe('AttendanceController (e2e)', () => {
                         data: expect.any(Object)
                     })
                 );
+                expect(response.body.data).toHaveProperty('id');
                 expect(response.body.data.id).toEqual(adminEntryAttendanceId);
             });
 
@@ -219,7 +238,18 @@ describe('AttendanceController (e2e)', () => {
                         data: expect.any(Object)
                     })
                 );
+                expect(response.body.data).toHaveProperty('id');
                 expect(response.body.data.id).toEqual(professorEntryAttendanceId);
+            });
+
+            it('Should give conflict error when update creates duplicate combination', async () => {
+                await request(server)
+                    .patch(`/api/attendance/update/${adminEntryAttendanceId}`)
+                    .set('Authorization', `Bearer ${adminToken}`)
+                    .send({
+                        className: professorClassName
+                    })
+                    .expect(409);
             });
 
             it('Should give error on student update attendance', async () => {
@@ -281,6 +311,8 @@ describe('AttendanceController (e2e)', () => {
                         total: expect.any(Number)
                     })
                 );
+                expect(response.body.data).toHaveProperty('items');
+                expect(response.body.data).toHaveProperty('total');
                 expect(response.body.data.items.length).toBeLessThanOrEqual(10);
                 expect(Array.isArray(response.body.data.items)).toBe(true);
             });
@@ -301,6 +333,8 @@ describe('AttendanceController (e2e)', () => {
                         total: expect.any(Number)
                     })
                 );
+                expect(response.body.data).toHaveProperty('items');
+                expect(response.body.data).toHaveProperty('total');
                 expect(response.body.data.items.length).toBeLessThanOrEqual(10);
                 expect(Array.isArray(response.body.data.items)).toBe(true);
             });
@@ -321,8 +355,33 @@ describe('AttendanceController (e2e)', () => {
                         total: expect.any(Number)
                     })
                 );
+                expect(response.body.data).toHaveProperty('items');
+                expect(response.body.data).toHaveProperty('total');
                 expect(response.body.data.items.length).toBeLessThanOrEqual(10);
                 expect(Array.isArray(response.body.data.items)).toBe(true);
+            });
+
+            it('Should give error on invalid month format', async () => {
+                await request(server)
+                    .get('/api/attendance/list')
+                    .query({
+                        studentId,
+                        month: '2026/03'
+                    })
+                    .set('Authorization', `Bearer ${adminToken}`)
+                    .expect(400);
+            });
+
+            it('Should give error on invalid page and size values', async () => {
+                await request(server)
+                    .get('/api/attendance/list')
+                    .query({
+                        studentId,
+                        page: 0,
+                        size: 101
+                    })
+                    .set('Authorization', `Bearer ${adminToken}`)
+                    .expect(400);
             });
 
             it('Should give error if student try to access it', async () => {
@@ -344,7 +403,7 @@ describe('AttendanceController (e2e)', () => {
         });
 
         describe('Get Attendance By Date and Class', () => {
-            it('Admin should able to list attendance based on date and class', async () => {
+            it('Admin should able to get attendance based on date and class', async () => {
                 const response = await request(server)
                     .get(`/api/attendance/${studentId}`)
                     .query({
@@ -360,9 +419,10 @@ describe('AttendanceController (e2e)', () => {
                         data: expect.any(Object)
                     })
                 );
+                expect(response.body.data).toHaveProperty('id');
             });
 
-            it('Professor should able to list attendance based on date and class', async () => {
+            it('Professor should able to get attendance based on date and class', async () => {
                 const response = await request(server)
                     .get(`/api/attendance/${studentId}`)
                     .query({
@@ -378,6 +438,7 @@ describe('AttendanceController (e2e)', () => {
                         data: expect.any(Object)
                     })
                 );
+                expect(response.body.data).toHaveProperty('id');
             });
 
             it('Should give error on student access it', async () => {
@@ -400,6 +461,17 @@ describe('AttendanceController (e2e)', () => {
                     .set('Authorization', `Bearer ${professorToken}`)
                     .expect(400);
             });
+
+            it('Should give error on non-existing record', async () => {
+                await request(server)
+                    .get(`/api/attendance/${studentId}`)
+                    .query({
+                        date: "2026-05-05",
+                        className: "ABCD"
+                    })
+                    .set('Authorization', `Bearer ${professorToken}`)
+                    .expect(404)
+            });
         });
 
         describe('Delete Attendance', () => {
@@ -409,6 +481,12 @@ describe('AttendanceController (e2e)', () => {
                     .set('Authorization', `Bearer ${adminToken}`)
                     .expect(200);
 
+                expect(response.body).toEqual(
+                    expect.objectContaining({
+                        success: true,
+                        data: expect.any(Object)
+                    })
+                );
                 expect(response.body.success).toEqual(true);
             });
 
@@ -418,6 +496,12 @@ describe('AttendanceController (e2e)', () => {
                     .set('Authorization', `Bearer ${professorToken}`)
                     .expect(200);
 
+                expect(response.body).toEqual(
+                    expect.objectContaining({
+                        success: true,
+                        data: expect.any(Object)
+                    })
+                );
                 expect(response.body.success).toEqual(true);
             });
 

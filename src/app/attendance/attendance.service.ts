@@ -27,10 +27,6 @@ export class AttendanceService {
     ): Promise<AttendanceResDTO> {
         if (!studentId) throw CustomExceptionFactory.create(ErrorCode.BAD_REQUEST, "Invalid studentId");
 
-        if (!currentUserId) {
-            throw CustomExceptionFactory.create(ErrorCode.USER_NOT_IN_REQUEST, "Current user not found in request");
-        }
-
         const [student, recordedBy] = await Promise.all([
             this.userService.findByIdOrThrow(studentId),
             this.userService.findByIdOrThrow(currentUserId)

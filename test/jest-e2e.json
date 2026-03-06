@@ -23,10 +23,13 @@
   },
   "coveragePathIgnorePatterns": [
     "src/app/common/utils",
-    "src/app/common/helpers",
+    "src/app/common/helper",
     "src/app/common/infra",
     "src/app/config",
     "src/app/common/logger",
-    "src/app/user/helper"
+    "src/app/user/helper",
+    "src/app/jwt/helper",
+    "src/app/auth/helper",
+    "test/utils"
   ]
 }
