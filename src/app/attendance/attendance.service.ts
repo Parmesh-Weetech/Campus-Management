@@ -127,6 +127,8 @@ export class AttendanceService {
                 ? currentUser.id
                 : listAttendanceReqDTO.studentId;
 
+        if (!studentId) throw CustomExceptionFactory.create(ErrorCode.BAD_REQUEST, 'StudentId is required!');
+
         if (
             currentUser.userRole === UserRole.STUDENT &&
             listAttendanceReqDTO.studentId &&
@@ -134,14 +136,23 @@ export class AttendanceService {
         ) throw CustomExceptionFactory.create(ErrorCode.ATTENDANCE_STUDENT_SCOPE_VIOLATION);
 
 
-        let monthStart: string | undefined;
-        let monthEnd: string | undefined;
+        let monthStart: string;
+        let monthEnd: string;
+
+        const today = new Date();
+
+        let year = today.getUTCFullYear();
+        let month = today.getUTCMonth() + 1;
+
         if (listAttendanceReqDTO.month) {
-            const [year, month] = listAttendanceReqDTO.month.split('-').map((val) => Number(val));
-            monthStart = new Date(Date.UTC(year, month - 1, 1)).toISOString().slice(0, 10);
-            monthEnd = new Date(Date.UTC(year, month, 1)).toISOString().slice(0, 10);
+            const parts = listAttendanceReqDTO.month.split('-');
+            year = Number(parts[0]);
+            month = Number(parts[1]);
         }
 
+        monthStart = new Date(Date.UTC(year, month - 1, 1)).toISOString().slice(0, 10);
+        monthEnd = new Date(Date.UTC(year, month, 1)).toISOString().slice(0, 10);
+        
         const [items, total] = await this.attendanceReaderService.listAttendance({
             page,
             size,
@@ -181,7 +192,7 @@ export class AttendanceService {
 
         const attendance = await this.attendanceReaderService.findByStudentDateClass(studentId, date, className);
 
-        if(!attendance) throw CustomExceptionFactory.create(ErrorCode.ATTENDANCE_NOT_FOUND);
+        if (!attendance) throw CustomExceptionFactory.create(ErrorCode.ATTENDANCE_NOT_FOUND);
 
         return {
             success: true,
@@ -197,7 +208,7 @@ export class AttendanceService {
 
         if (!currentUserId) throw CustomExceptionFactory.create(ErrorCode.USER_NOT_IN_REQUEST);
 
-        const existingAttendance = await this.attendanceWriterService.findByIdWithRelations(attendanceId);
+        const existingAttendance = await this.attendanceReaderService.findByIdWithRelations(attendanceId);
 
         if (!existingAttendance) throw CustomExceptionFactory.create(ErrorCode.ATTENDANCE_NOT_FOUND);
 

@@ -1,9 +1,9 @@
 import * as bcrypt from 'bcrypt';
-import { getEnvVal } from 'src/app/common/helper';
-import { convertIntoNumber } from 'src/app/jwt/helper/util';
+import { getEnvVal } from '../../common/helper/env';
+import { convertIntoNumber } from '../../jwt/helper/utils';
 
 export const comparePasswords = async (password: string, hashPassword: string) => {
-    return await bcrypt.compare(password, hashPassword); 
+    return await bcrypt.compare(password, hashPassword);
 }
 
 export const generateHashPassword = async (password: string) => {

@@ -3,7 +3,7 @@ import { isProd } from "./app/common/helper";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { ConfigService } from "@nestjs/config";
 import { DataSource } from "typeorm";
-import { MainSeeder } from "db/seeders/seeder";
+import { MainSeeder } from "../db/seeders/seeder";
 import { CustomExceptionFilter } from "./app/common/exception/custom-exception.filter";
 import 'multer'
 

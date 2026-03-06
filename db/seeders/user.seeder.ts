@@ -2,11 +2,16 @@ import { Seeder } from 'typeorm-extension';
 import { DataSource } from 'typeorm';
 import { User } from '../../src/app/user/entities/user.entity';
 import { UserStatus } from '../../src/app/user/types/user-status';
-import { generateHashPassword } from 'src/app/auth/helper/util';
+import { generateHashPassword } from '../../src/app/auth/helper/utils';
 
 declare global {
     interface EnvVar {
         HASHING_SALT: string;
+        ADMIN_NAME: string;
+        ADMIN_EMAIL: string;
+        ADMIN_PHONE: string;
+        ADMIN_PASSWORD: string;
+        ADMIN_STATUS: string;
     }
 }
 
@@ -22,7 +27,7 @@ export class UserSeeder implements Seeder {
 
         // Check if admin user exists
         const existingAdmin = await userRepo.findOne({ where: { email: adminEmail } });
-        
+
         if (existingAdmin) {
             console.log('Admin user already exists');
             return existingAdmin;

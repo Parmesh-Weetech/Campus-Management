@@ -2,7 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { LoginReqDTO } from '../rest/dto/request/login-req.dto';
 import { LoginResDTO } from '../rest/dto/response/login-res.dto';
 import { UserService } from '../user/user.service';
-import { comparePasswords } from './helper/util';
+import { comparePasswords } from './helper/utils';
 import { JwtService } from '../jwt/jwt.service';
 import { PayLoadType } from './types/payload.types';
 import { RefreshTokenService } from '../refresh-token/refresh-token.service';

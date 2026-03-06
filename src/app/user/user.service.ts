@@ -6,9 +6,9 @@ import { UserWriterService } from './user-writer.service';
 import { UserRole } from './types/user-role';
 import { CustomExceptionFactory } from '../common/exception/custom-exception.factory';
 import { ErrorCode } from '../common/exception/error-code';
-import { generateHashPassword } from '../auth/helper/util';
+import { generateHashPassword } from '../auth/helper/utils';
 import { User } from './entities/user.entity';
-import { canViewTargetProfile } from './helper/util';
+import { canViewTargetProfile } from './helper/utils';
 import { ProfileImageType } from './enum/profile-image-type.enum';
 
 @Injectable()
@@ -48,7 +48,7 @@ export class UserService {
 
     async findUserProfileDetails(userId: string, user: User): Promise<UserResDTO> {
         const targetUser = await this.findByIdOrThrow(userId);
-
+    
         const canView = canViewTargetProfile(user, targetUser.data);
 
         if (!canView) throw CustomExceptionFactory.create(ErrorCode.ROLE_PERMISSION_DENIED);

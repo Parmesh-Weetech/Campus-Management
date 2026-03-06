@@ -12,11 +12,12 @@ export class AttendanceReaderService {
     ) { }
 
     async findByStudentDateClass(studentId: string, date: string, className: string): Promise<Attendance | null> {
+        console.log(date, className, studentId)
         return await this.attendanceRepository.findOne({
             where: {
                 student: { id: studentId },
-                date,
-                className
+                date: date,
+                className: className
             }
         });
     }
@@ -53,8 +54,6 @@ export class AttendanceReaderService {
             .leftJoinAndSelect('attendance.student', 'student')
             .leftJoinAndSelect('attendance.recordedBy', 'recordedBy')
             .where('attendance.deletedAt IS NULL')
-            .orderBy('attendance.date', 'DESC')
-            .addOrderBy('attendance.createdAt', 'DESC')
             .skip((query.page - 1) * query.size)
             .take(query.size);
 
@@ -73,6 +72,15 @@ export class AttendanceReaderService {
                 monthStart: query.monthStart,
                 monthEnd: query.monthEnd
             });
+        }
+
+        // Conditional ordering
+        if (!query.className) {
+            queryBuilder.orderBy('attendance.className', 'ASC');
+        } else {
+            queryBuilder
+                .orderBy('attendance.date', 'DESC')
+                .addOrderBy('attendance.createdAt', 'DESC');
         }
 
         return await queryBuilder.getManyAndCount();

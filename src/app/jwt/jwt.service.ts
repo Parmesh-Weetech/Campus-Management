@@ -1,9 +1,10 @@
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
-import { ConfigService, ConfigType } from '@nestjs/config';
+import { Inject, Injectable } from '@nestjs/common';
+import { ConfigType } from '@nestjs/config';
 import { jwtConfig } from './jwt.config';
 import { JwtService as Jwt } from '@nestjs/jwt';
 import { CustomExceptionFactory } from '../common/exception/custom-exception.factory';
 import { ErrorCode } from '../common/exception/error-code';
+import { JsonWebTokenError, NotBeforeError, TokenExpiredError } from 'jsonwebtoken';
 
 @Injectable()
 export class JwtService<T extends Object> {
@@ -39,7 +40,21 @@ export class JwtService<T extends Object> {
     }
 
     async validateAccessToken(accessToken: string): Promise<T> {
-        const payload = await this.jwtService.verify(accessToken);
+        let payload: T & { isRefreshToken?: boolean };
+
+        try {
+            payload = await this.jwtService.verify(accessToken);
+        } catch (error) {
+            if (
+                error instanceof JsonWebTokenError ||
+                error instanceof TokenExpiredError ||
+                error instanceof NotBeforeError
+            ) {
+                throw CustomExceptionFactory.create(ErrorCode.INVALID_ACCESS_TOKEN);
+            }
+
+            throw error;
+        }
 
         if (payload.isRefreshToken) throw CustomExceptionFactory.create(ErrorCode.INVALID_ACCESS_TOKEN);
 
