@@ -47,6 +47,14 @@ describe('StudentController (e2e)', () => {
             .set('Authorization', `Bearer ${studentToken}`)
             .expect(200);
 
+        expect(studentProfileResponse.body).toEqual(
+            expect.objectContaining({
+                success: true,
+                data: expect.any(Object)
+            })
+        );
+        expect(studentProfileResponse.body.data).toHaveProperty('id');
+        expect(studentProfileResponse.body.data).toHaveProperty('email');
         studentId = studentProfileResponse.body.data.id;
 
         date = formatDateAsYYYYMMDD(new Date());
@@ -63,7 +71,13 @@ describe('StudentController (e2e)', () => {
             })
             .expect(201);
 
-        expect(adminCreateResponse.body?.data?.id).toBeDefined();
+        expect(adminCreateResponse.body).toEqual(
+            expect.objectContaining({
+                success: true,
+                data: expect.any(Object)
+            })
+        );
+        expect(adminCreateResponse.body.data).toHaveProperty('id');
         adminEntryAttendanceId = adminCreateResponse.body.data.id;
 
         professorClassName = `Science-${Date.now()}`;
@@ -77,7 +91,13 @@ describe('StudentController (e2e)', () => {
             })
             .expect(201);
 
-        expect(professorCreateResponse.body?.data?.id).toBeDefined();
+        expect(professorCreateResponse.body).toEqual(
+            expect.objectContaining({
+                success: true,
+                data: expect.any(Object)
+            })
+        );
+        expect(professorCreateResponse.body.data).toHaveProperty('id');
         professorEntryAttendanceId = professorCreateResponse.body.data.id;
     });
 
@@ -128,6 +148,8 @@ describe('StudentController (e2e)', () => {
                         total: expect.any(Number)
                     })
                 );
+                expect(response.body.data).toHaveProperty('total');
+                expect(response.body.data).toHaveProperty('items');
                 expect(response.body.data.items.length).toBeLessThanOrEqual(10);
                 expect(Array.isArray(response.body.data.items)).toBe(true);
             });
@@ -148,6 +170,8 @@ describe('StudentController (e2e)', () => {
                         total: expect.any(Number)
                     })
                 );
+                expect(response.body.data).toHaveProperty('total');
+                expect(response.body.data).toHaveProperty('items');
                 expect(response.body.data.items.length).toBeLessThanOrEqual(10);
                 expect(Array.isArray(response.body.data.items)).toBe(true);
             });
@@ -156,7 +180,7 @@ describe('StudentController (e2e)', () => {
                 await request(server)
                     .get('/api/student/attendance/list')
                     .set('Authorization', `Bearer ${professorToken}`)
-                    .expect(403)
+                    .expect(403);
             });
 
             it('Should give error if admin try to access it', async () => {
@@ -194,6 +218,7 @@ describe('StudentController (e2e)', () => {
                         data: expect.any(Object)
                     })
                 );
+                expect(response.body.data).toHaveProperty('id');
             });
 
             it('Should give error if className is missing', async () => {
@@ -203,7 +228,7 @@ describe('StudentController (e2e)', () => {
                     .query({
                         date
                     })
-                    .expect(400)
+                    .expect(400);
             });
         })
     });
