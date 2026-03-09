@@ -27,7 +27,7 @@ export const setupAdminUser = async (app: INestApplication): Promise<{ token: st
         })
         .expect(200);
 
-    expect(loginResponse.body.data.accessToken).toBeDefined();
+    expect(loginResponse.body.data).toHaveProperty('accessToken');
 
     if (!loginResponse.body.data.accessToken) throw new InternalServerErrorException("Internal Server Error while processing login request!");
 

@@ -71,7 +71,7 @@ export const defaultErrorMessages: Record<
     },
     [ErrorCode.INVALID_AUTHORIZATION_FORMAT]: {
         message: 'Invalid authorization format',
-        statusCode: 401,
+        statusCode: 400,
     },
     [ErrorCode.AUTHORIZATION_HEADER_MISSING]: {
         message: 'You must be loggedIn!',

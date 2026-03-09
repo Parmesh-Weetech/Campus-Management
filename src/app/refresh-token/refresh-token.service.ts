@@ -36,7 +36,7 @@ export class RefreshTokenService {
         const [type, authorization] = refreshToken.split(" ");
 
         const token = type === "Bearer" ? authorization : undefined;
-        if (!token) throw CustomExceptionFactory.create(ErrorCode.INVALID_AUTHORIZATION_FORMAT, "Token not found!");
+        if (!token) throw CustomExceptionFactory.create(ErrorCode.INVALID_AUTHORIZATION_FORMAT);
 
         const existingRefreshToken = await this.refreshTokenReaderService.findByRefreshToken(token);
         if (!existingRefreshToken) throw CustomExceptionFactory.create(ErrorCode.REFRESH_TOKEN_NOT_FOUND);
