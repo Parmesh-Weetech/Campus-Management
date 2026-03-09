@@ -27,6 +27,12 @@ describe("UserController (e2e)", () => {
     let adminId: string;
     let professorId: string;
     let studentId: string;
+    let specialNameProfessorId: string;
+    let specialNameProfessorToken: string;
+    let professorEmail: string;
+    let professorPhoneNumber: string;
+    let studentEmail: string;
+    let studentPhoneNumber: string;
     let newUserEmail: string;
     let newUserPassword: string;
     let newUserName: string;
@@ -47,8 +53,10 @@ describe("UserController (e2e)", () => {
 
         newUserName = `testProfessorUser-${randomId}`;
         newUserEmail = `test-professor-user-${randomId}@example.com`;
+        professorEmail = newUserEmail;
         newUserPassword = "P27m_09@b0";
         newUserPhoneNumber = generatePhoneNumber();
+        professorPhoneNumber = newUserPhoneNumber;
 
         // Create Professor
         const successResponseProfessor = await request(server)
@@ -92,7 +100,9 @@ describe("UserController (e2e)", () => {
 
         newUserName = `testStudentUser-${randomId}`;
         newUserEmail = `test-student-user-${randomId}@example.com`;
+        studentEmail = newUserEmail;
         newUserPhoneNumber = generatePhoneNumber();
+        studentPhoneNumber = newUserPhoneNumber;
 
         // Create Student
         const responseStudent = await request(server)
@@ -145,6 +155,30 @@ describe("UserController (e2e)", () => {
         const studentLogin = await setupStudentUser(app, newUserEmail, newUserPassword);
 
         studentToken = studentLogin;
+
+        const specialNameProfessorEmail = `test-special-professor-user-${randomId}@example.com`;
+        const specialNameProfessorPassword = "P27m_09@b0";
+
+        const specialNameCreateResponse = await request(server)
+            .post('/api/user/create/professor')
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({
+                name: '!!!',
+                email: specialNameProfessorEmail,
+                password: specialNameProfessorPassword,
+                phoneNumber: generatePhoneNumber()
+            })
+            .expect(201);
+        specialNameProfessorId = specialNameCreateResponse.body.data.id;
+
+        const specialNameLoginResponse = await request(server)
+            .post('/api/auth/login')
+            .send({
+                email: specialNameProfessorEmail,
+                password: specialNameProfessorPassword
+            })
+            .expect(200);
+        specialNameProfessorToken = specialNameLoginResponse.body.data.accessToken;
     });
 
     afterAll(async () => {
@@ -171,10 +205,20 @@ describe("UserController (e2e)", () => {
         // No API as don't want the soft-delete.
         const dataSource = app.get(DataSource);
         const userRepository = dataSource.getRepository(User);
-        const userIdsToDelete: string[] = [studentId, professorId].filter((id): id is string => Boolean(id));
+        const userIdsToDelete: string[] = [studentId, professorId, specialNameProfessorId].filter((id): id is string => Boolean(id));
 
         if (userIdsToDelete.length > 0) {
             await userRepository.delete(userIdsToDelete);
+        }
+
+        const emailsToDelete = [professorEmail, studentEmail, `test-special-professor-user-${randomId}@example.com`]
+            .filter((email): email is string => Boolean(email));
+        if (emailsToDelete.length > 0) {
+            await userRepository
+                .createQueryBuilder()
+                .delete()
+                .where('email IN (:...emails)', { emails: emailsToDelete })
+                .execute();
         }
 
         await dataSource
@@ -251,6 +295,92 @@ describe("UserController (e2e)", () => {
             await request(server)
                 .get('/api/user/profile')
                 .set('Authorization', 'Bearer invalidtoken')
+                .expect(401);
+        });
+
+        it('Should return 401 for invalid authorization format', async () => {
+            await request(server)
+                .get('/api/user/profile')
+                .set('Authorization', 'Basic abc123')
+                .expect(401);
+        });
+    });
+
+    describe("User creation conflict and auth checks", () => {
+        it('Should give conflict on duplicate professor email', async () => {
+            await request(server)
+                .post('/api/user/create/professor')
+                .set('Authorization', `Bearer ${adminToken}`)
+                .send({
+                    name: `dup-prof-email-${randomId}`,
+                    email: professorEmail,
+                    password: newUserPassword,
+                    phoneNumber: generatePhoneNumber()
+                })
+                .expect(409);
+        });
+
+        it('Should give conflict on duplicate professor phone', async () => {
+            await request(server)
+                .post('/api/user/create/professor')
+                .set('Authorization', `Bearer ${adminToken}`)
+                .send({
+                    name: `dup-prof-phone-${randomId}`,
+                    email: `dup-prof-phone-${randomId}@example.com`,
+                    password: newUserPassword,
+                    phoneNumber: professorPhoneNumber
+                })
+                .expect(409);
+        });
+
+        it('Should give conflict on duplicate student email', async () => {
+            await request(server)
+                .post('/api/user/create/student')
+                .set('Authorization', `Bearer ${adminToken}`)
+                .send({
+                    name: `dup-student-email-${randomId}`,
+                    email: studentEmail,
+                    password: newUserPassword,
+                    phoneNumber: generatePhoneNumber()
+                })
+                .expect(409);
+        });
+
+        it('Should give conflict on duplicate student phone', async () => {
+            await request(server)
+                .post('/api/user/create/student')
+                .set('Authorization', `Bearer ${adminToken}`)
+                .send({
+                    name: `dup-student-phone-${randomId}`,
+                    email: `dup-student-phone-${randomId}@example.com`,
+                    password: newUserPassword,
+                    phoneNumber: studentPhoneNumber
+                })
+                .expect(409);
+        });
+
+        it('Should give error on missing token for create professor', async () => {
+            await request(server)
+                .post('/api/user/create/professor')
+                .send({
+                    name: `no-token-prof-${randomId}`,
+                    email: `no-token-prof-${randomId}@example.com`,
+                    password: newUserPassword,
+                    phoneNumber: generatePhoneNumber()
+                })
+                .expect(401);
+        });
+
+        it('Should give error on invalid auth format for create student', async () => {
+            await request(server)
+                .post('/api/user/create/student')
+                .set('Authorization', 'Basic abc123')
+                .send({
+                    name: `basic-auth-student-${randomId}`,
+                    email: `basic-auth-student-${randomId}@example.com`,
+                    password: newUserPassword,
+                    phoneNumber: generatePhoneNumber()
+                })
                 .expect(401);
         });
     });
@@ -397,6 +527,23 @@ describe("UserController (e2e)", () => {
             uploadedProfilePhotos.push(filename as string);
         });
 
+        it('Should fallback to user prefix when normalized name becomes empty', async () => {
+            const tmpDir = path.join(__dirname, '..', '..', 'assets', 'profile-photo');
+            const filePath = createTempImage(tmpDir, 'test-special-name', 'dummy-image-content-special');
+            tempFiles.push(filePath);
+
+            const response = await request(server)
+                .post(`/api/user/upload/profile-photo`)
+                .set('Authorization', `Bearer ${specialNameProfessorToken}`)
+                .attach('file', filePath)
+                .expect(200);
+
+            const filename = extractFilename(response);
+            expect(filename).toBeDefined();
+            expect(String(filename).startsWith('user-')).toBe(true);
+            uploadedProfilePhotos.push(filename as string);
+        });
+
         it('Should give error on invalid file type', async () => {
             const tmpDir = path.join(__dirname, '..', '..', 'assets', 'profile-photo');
             if (!fs.existsSync(tmpDir)) {
@@ -442,6 +589,18 @@ describe("UserController (e2e)", () => {
                 .set('Authorization', `Bearer invalid.token.withnodata`)
                 .attach('file', filePath)
                 .expect(401)
+        });
+
+        it('Should give error on invalid auth format', async () => {
+            const tmpDir = path.join(__dirname, '..', '..', 'assets', 'profile-photo');
+            const filePath = createTempImage(tmpDir, 'test-student', 'dummy-image-content-student');
+            tempFiles.push(filePath);
+
+            await request(server)
+                .post(`/api/user/upload/profile-photo`)
+                .set('Authorization', 'Basic abc123')
+                .attach('file', filePath)
+                .expect(401);
         });
 
         it('Should give error on missing file', async () => {
@@ -551,6 +710,18 @@ describe("UserController (e2e)", () => {
             await request(server)
                 .post(`/api/user/upload/profile-thumbnail`)
                 .set('Authorization', `Bearer invalid.token.withnodata`)
+                .attach('file', filePath)
+                .expect(401);
+        });
+
+        it('Should give error on invalid auth format', async () => {
+            const tmpDir = path.join(__dirname, '..', '..', 'assets', 'thumbnail-photo');
+            const filePath = createTempImage(tmpDir, 'test-student', 'dummy-image-content-student');
+            tempFiles.push(filePath);
+
+            await request(server)
+                .post(`/api/user/upload/profile-thumbnail`)
+                .set('Authorization', 'Basic abc123')
                 .attach('file', filePath)
                 .expect(401);
         });

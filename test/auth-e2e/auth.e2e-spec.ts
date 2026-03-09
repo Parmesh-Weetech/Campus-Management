@@ -63,12 +63,41 @@ describe('AuthController (e2e)', () => {
         });
 
         it('Should give error on missing field', async () => {
-            const response = await request(server)
+            await request(server)
                 .post('/api/auth/login')
                 .send({
                     password: defaultPassword
                 })
                 .expect(400)
-        })
+        });
+
+        it('Should give error on missing password', async () => {
+            await request(server)
+                .post('/api/auth/login')
+                .send({
+                    email: defaultEmail
+                })
+                .expect(400);
+        });
+
+        it('Should give error on invalid email format', async () => {
+            await request(server)
+                .post('/api/auth/login')
+                .send({
+                    email: 'not-an-email',
+                    password: defaultPassword
+                })
+                .expect(400);
+        });
+
+        it('Should give error on uppercase email due to lowercase validation', async () => {
+            await request(server)
+                .post('/api/auth/login')
+                .send({
+                    email: defaultEmail.toUpperCase(),
+                    password: defaultPassword
+                })
+                .expect(400);
+        });
     });
 });
