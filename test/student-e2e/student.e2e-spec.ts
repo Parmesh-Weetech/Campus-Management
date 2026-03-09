@@ -1,4 +1,3 @@
-import { INestApplication } from "@nestjs/common"
 import { defaultBeforeAll, setupAdminUser, setupProfessorUser, setupStudentUser } from "../utils/commonHooks";
 import { mockProfessor, mockStudent } from "../utils/mock-data";
 import request from 'supertest';
@@ -7,53 +6,40 @@ import { DataSource } from "typeorm";
 import { Attendance } from "../../src/app/attendance/entities/attendance.entity";
 import { RefreshToken } from "../../src/app/refresh-token/entities/refresh-token.entity";
 import { User } from "../../src/app/user/entities/user.entity";
+import { TestContext } from "../utils/test-context";
 
 describe('StudentController (e2e)', () => {
-    let server;
-    let app: INestApplication;
-    let adminResponse: { token: string, id: string };
-    let adminToken: string;
-    let professorToken: string;
-    let studentToken: string;
-    let professorId: string;
-    let studentId: string;
-    let professorMockData: { email: string, password: string };
-    let studentMockData: { email: string, password: string };
+    const ctx: TestContext = {};
     let date: string;
-    let adminClassName: string;
-    let professorClassName: string;
-
-    let adminEntryAttendanceId: string;
-    let professorEntryAttendanceId: string;
 
     beforeAll(async () => {
-        app = await defaultBeforeAll();
-        server = app.getHttpServer();
+        ctx.app = await defaultBeforeAll();
+        ctx.server = ctx.app.getHttpServer();
 
         // Login Admin
-        adminResponse = await setupAdminUser(app);
-        adminToken = adminResponse.token;
+        ctx.adminResponse = await setupAdminUser(ctx.app!);
+        ctx.adminToken = ctx.adminResponse.token;
 
         // Get professor mock data
-        professorMockData = mockProfessor();
+        ctx.professorMockData = mockProfessor();
 
         // Login Professor
-        professorToken = await setupProfessorUser(app, professorMockData.email, professorMockData.password);
-        const professorProfileResponse = await request(server)
+        ctx.professorToken = await setupProfessorUser(ctx.app!, ctx.professorMockData.email, ctx.professorMockData.password);
+        const professorProfileResponse = await request(ctx.server)
             .get('/api/user/profile')
-            .set('Authorization', `Bearer ${professorToken}`)
+            .set('Authorization', `Bearer ${ctx.professorToken}`)
             .expect(200);
         expect(professorProfileResponse.body.data).toHaveProperty('id');
-        professorId = professorProfileResponse.body.data.id;
+        ctx.professorId = professorProfileResponse.body.data.id;
 
         // Get student mock data
-        studentMockData = mockStudent();
+        ctx.studentMockData = mockStudent();
 
         // Login Student
-        studentToken = await setupStudentUser(app, studentMockData.email, studentMockData.password);
-        const studentProfileResponse = await request(server)
+        ctx.studentToken = await setupStudentUser(ctx.app!, ctx.studentMockData.email, ctx.studentMockData.password);
+        const studentProfileResponse = await request(ctx.server)
             .get('/api/user/profile')
-            .set('Authorization', `Bearer ${studentToken}`)
+            .set('Authorization', `Bearer ${ctx.studentToken}`)
             .expect(200);
 
         expect(studentProfileResponse.body).toEqual(
@@ -64,19 +50,19 @@ describe('StudentController (e2e)', () => {
         );
         expect(studentProfileResponse.body.data).toHaveProperty('id');
         expect(studentProfileResponse.body.data).toHaveProperty('email');
-        studentId = studentProfileResponse.body.data.id;
+        ctx.studentId = studentProfileResponse.body.data.id;
 
         date = formatDateAsYYYYMMDD(new Date());
 
         // Create attendance fixtures for this suite
-        adminClassName = `Maths-${Date.now()}`;
-        const adminCreateResponse = await request(server)
-            .post(`/api/attendance/create/${studentId}`)
-            .set("Authorization", `Bearer ${adminToken}`)
+        ctx.adminClassName = `Maths-${Date.now()}`;
+        const adminCreateResponse = await request(ctx.server)
+            .post(`/api/attendance/create/${ctx.studentId}`)
+            .set("Authorization", `Bearer ${ctx.adminToken}`)
             .send({
                 date,
                 status: "PRESENT",
-                className: adminClassName
+                className: ctx.adminClassName
             })
             .expect(201);
 
@@ -87,16 +73,16 @@ describe('StudentController (e2e)', () => {
             })
         );
         expect(adminCreateResponse.body.data).toHaveProperty('id');
-        adminEntryAttendanceId = adminCreateResponse.body.data.id;
+        ctx.adminEntryAttendanceId = adminCreateResponse.body.data.id;
 
-        professorClassName = `Science-${Date.now()}`;
-        const professorCreateResponse = await request(server)
-            .post(`/api/attendance/create/${studentId}`)
-            .set("Authorization", `Bearer ${professorToken}`)
+        ctx.professorClassName = `Science-${Date.now()}`;
+        const professorCreateResponse = await request(ctx.server)
+            .post(`/api/attendance/create/${ctx.studentId}`)
+            .set("Authorization", `Bearer ${ctx.professorToken}`)
             .send({
                 date,
                 status: "PRESENT",
-                className: professorClassName
+                className: ctx.professorClassName
             })
             .expect(201);
 
@@ -107,14 +93,14 @@ describe('StudentController (e2e)', () => {
             })
         );
         expect(professorCreateResponse.body.data).toHaveProperty('id');
-        professorEntryAttendanceId = professorCreateResponse.body.data.id;
+        ctx.professorEntryAttendanceId = professorCreateResponse.body.data.id;
     });
 
     afterAll(async () => {
-        const dataSource = app.get(DataSource);
+        const dataSource = ctx.app!.get(DataSource);
         const attendanceRepository = dataSource.getRepository(Attendance);
         const userRepository = dataSource.getRepository(User);
-        const attendanceIdsToDelete: string[] = [adminEntryAttendanceId, professorEntryAttendanceId]
+        const attendanceIdsToDelete: string[] = [ctx.adminEntryAttendanceId, ctx.professorEntryAttendanceId]
             .filter((id): id is string => Boolean(id));
 
         if (attendanceIdsToDelete.length > 0) {
@@ -127,12 +113,12 @@ describe('StudentController (e2e)', () => {
             .from(RefreshToken)
             .execute();
 
-        const userIdsToDelete: string[] = [studentId, professorId].filter((id): id is string => Boolean(id));
+        const userIdsToDelete: string[] = [ctx.studentId, ctx.professorId].filter((id): id is string => Boolean(id));
         if (userIdsToDelete.length > 0) {
             await userRepository.delete(userIdsToDelete);
         }
 
-        const testEmails = [studentMockData?.email, professorMockData?.email].filter(
+        const testEmails = [ctx.studentMockData?.email, ctx.professorMockData?.email].filter(
             (email): email is string => Boolean(email)
         );
         if (testEmails.length > 0) {
@@ -143,15 +129,15 @@ describe('StudentController (e2e)', () => {
                 .execute();
         }
 
-        await app.close();
+        await ctx.app!.close();
     });
 
     describe('Student Lifecycle', () => {
         describe('Attendance list according to filters', () => {
             it('Student should able to list all attendance of themselves', async () => {
-                const response = await request(server)
+                const response = await request(ctx.server)
                     .get('/api/student/attendance/list')
-                    .set('Authorization', `Bearer ${studentToken}`)
+                    .set('Authorization', `Bearer ${ctx.studentToken}`)
                     .expect(200);
 
                 expect(response.body.data).toEqual(
@@ -167,13 +153,13 @@ describe('StudentController (e2e)', () => {
             });
 
             it('Student should able to list all attendance based on month and className', async () => {
-                const response = await request(server)
+                const response = await request(ctx.server)
                     .get('/api/student/attendance/list')
                     .query({
-                        className: professorClassName,
+                        className: ctx.professorClassName,
                         month: date.slice(0, 7)
                     })
-                    .set('Authorization', `Bearer ${studentToken}`)
+                    .set('Authorization', `Bearer ${ctx.studentToken}`)
                     .expect(200);
 
                 expect(response.body.data).toEqual(
@@ -189,48 +175,48 @@ describe('StudentController (e2e)', () => {
             });
 
             it('Should give error if professor try to access it', async () => {
-                await request(server)
+                await request(ctx.server)
                     .get('/api/student/attendance/list')
-                    .set('Authorization', `Bearer ${professorToken}`)
+                    .set('Authorization', `Bearer ${ctx.professorToken}`)
                     .expect(403);
             });
 
             it('Should give error if admin try to access it', async () => {
-                await request(server)
+                await request(ctx.server)
                     .get('/api/student/attendance/list')
-                    .set('Authorization', `Bearer ${adminToken}`)
+                    .set('Authorization', `Bearer ${ctx.adminToken}`)
                     .expect(403)
             });
 
             it('Should give error if student try to access other student attendance', async () => {
-                await request(server)
+                await request(ctx.server)
                     .get('/api/student/attendance/list')
                     .query({
                         studentId: 'd909c95c-87cd-4629-afbb-8d6f27b7e5a1'
                     })
-                    .set('Authorization', `Bearer ${studentToken}`)
+                    .set('Authorization', `Bearer ${ctx.studentToken}`)
                     .expect(403);
             });
 
             it('Should give error on invalid month format', async () => {
-                await request(server)
+                await request(ctx.server)
                     .get('/api/student/attendance/list')
                     .query({
                         month: '2026/03'
                     })
-                    .set('Authorization', `Bearer ${studentToken}`)
+                    .set('Authorization', `Bearer ${ctx.studentToken}`)
                     .expect(400);
             });
 
             it('Should give error on invalid token', async () => {
-                await request(server)
+                await request(ctx.server)
                     .get('/api/student/attendance/list')
                     .set('Authorization', 'Bearer invalid.token.value')
                     .expect(401);
             });
 
             it('Should give error on no token provided', async () => {
-                await request(server)
+                await request(ctx.server)
                     .get('/api/student/attendance/list')
                     .expect(401);
             });
@@ -238,13 +224,13 @@ describe('StudentController (e2e)', () => {
 
         describe('Student attendance based on date and class', () => {
             it('Should give attendance based on date and admin className', async () => {
-                const response = await request(server)
+                const response = await request(ctx.server)
                     .get('/api/student/attendance')
                     .query({
                         date,
-                        className: adminClassName
+                        className: ctx.adminClassName
                     })
-                    .set('Authorization', `Bearer ${studentToken}`)
+                    .set('Authorization', `Bearer ${ctx.studentToken}`)
                     .expect(200);
 
                 expect(response.body).toEqual(
@@ -257,13 +243,13 @@ describe('StudentController (e2e)', () => {
             });
 
             it('Should give attendance based on date and professor className', async () => {
-                const response = await request(server)
+                const response = await request(ctx.server)
                     .get('/api/student/attendance')
                     .query({
                         date,
-                        className: professorClassName
+                        className: ctx.professorClassName
                     })
-                    .set('Authorization', `Bearer ${studentToken}`)
+                    .set('Authorization', `Bearer ${ctx.studentToken}`)
                     .expect(200);
 
                 expect(response.body).toEqual(
@@ -276,12 +262,12 @@ describe('StudentController (e2e)', () => {
             });
 
             it('Should use today date when date is omitted', async () => {
-                const response = await request(server)
+                const response = await request(ctx.server)
                     .get('/api/student/attendance')
                     .query({
-                        className: professorClassName
+                        className: ctx.professorClassName
                     })
-                    .set('Authorization', `Bearer ${studentToken}`)
+                    .set('Authorization', `Bearer ${ctx.studentToken}`)
                     .expect(200);
 
                 expect(response.body).toEqual(
@@ -293,9 +279,9 @@ describe('StudentController (e2e)', () => {
             });
 
             it('Should give error if className is missing', async () => {
-                await request(server)
+                await request(ctx.server)
                     .get('/api/student/attendance')
-                    .set('Authorization', `Bearer ${studentToken}`)
+                    .set('Authorization', `Bearer ${ctx.studentToken}`)
                     .query({
                         date
                     })
@@ -303,9 +289,9 @@ describe('StudentController (e2e)', () => {
             });
 
             it('Should give error if record not found', async () => {
-                await request(server)
+                await request(ctx.server)
                     .get('/api/student/attendance')
-                    .set('Authorization', `Bearer ${studentToken}`)
+                    .set('Authorization', `Bearer ${ctx.studentToken}`)
                     .query({
                         date: "2026-05-05",
                         className: "Maths"
@@ -314,33 +300,33 @@ describe('StudentController (e2e)', () => {
             });
 
             it('Should give error if date is invalid', async () => {
-                await request(server)
+                await request(ctx.server)
                     .get('/api/student/attendance')
-                    .set('Authorization', `Bearer ${studentToken}`)
+                    .set('Authorization', `Bearer ${ctx.studentToken}`)
                     .query({
                         date: '2026/05/01',
-                        className: professorClassName
+                        className: ctx.professorClassName
                     })
                     .expect(400);
             });
 
             it('Should give error on invalid token', async () => {
-                await request(server)
+                await request(ctx.server)
                     .get('/api/student/attendance')
                     .query({
                         date,
-                        className: professorClassName
+                        className: ctx.professorClassName
                     })
                     .set('Authorization', 'Bearer invalid.token.value')
                     .expect(401);
             });
 
             it('Should give error on no token provided', async () => {
-                await request(server)
+                await request(ctx.server)
                     .get('/api/student/attendance')
                     .query({
                         date,
-                        className: professorClassName
+                        className: ctx.professorClassName
                     })
                     .expect(401);
             });

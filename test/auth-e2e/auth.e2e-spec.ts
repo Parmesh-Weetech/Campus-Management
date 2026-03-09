@@ -1,42 +1,39 @@
-import { INestApplication } from "@nestjs/common";
 import { defaultBeforeAll } from "../utils/commonHooks";
 import { mockAdmin } from "./auth-mock-data";
 import request from 'supertest';
 import { DataSource } from "typeorm";
 import { RefreshToken } from "../../src/app/refresh-token/entities/refresh-token.entity";
+import { TestContext } from "../utils/test-context";
 
 describe('AuthController (e2e)', () => {
-    let app: INestApplication;
-    let server;
-    let defaultEmail: string;
-    let defaultPassword: string;
+    const ctx: TestContext = {};
 
     beforeAll(async () => {
-        app = await defaultBeforeAll();
-        server = app.getHttpServer();
+        ctx.app = await defaultBeforeAll();
+        ctx.server = ctx.app.getHttpServer();
 
         const user = mockAdmin();
-        defaultEmail = user.email;
-        defaultPassword = user.password;
+        ctx.adminEmail = user.email;
+        ctx.adminPassword = user.password;
     });
 
     afterAll(async () => {
-        const dataSource = app.get(DataSource);
+        const dataSource = ctx.app!.get(DataSource);
         await dataSource
             .createQueryBuilder()
             .delete()
             .from(RefreshToken)
             .execute();
 
-        await app.close();
+        await ctx.app!.close();
     })
 
     describe('POST /api/auth/login Master Admin Login', () => {
         it('FAILURE: POST - Login with invalid credentials', async () => {
-            await request(server)
+            await request(ctx.server)
                 .post('/api/auth/login')
                 .send({
-                    email: defaultEmail,
+                    email: ctx.adminEmail,
                     password: 'wrongpassword',
                 })
                 .expect(401);
@@ -44,11 +41,11 @@ describe('AuthController (e2e)', () => {
 
         it('SUCCESS: POST - Login with master admin credentials', async () => {
 
-            const response = await request(server)
+            const response = await request(ctx.server)
                 .post('/api/auth/login')
                 .send({
-                    email: defaultEmail,
-                    password: defaultPassword
+                    email: ctx.adminEmail,
+                    password: ctx.adminPassword
                 })
                 .expect(200);
 
@@ -63,39 +60,39 @@ describe('AuthController (e2e)', () => {
         });
 
         it('Should give error on missing field', async () => {
-            await request(server)
+            await request(ctx.server)
                 .post('/api/auth/login')
                 .send({
-                    password: defaultPassword
+                    password: ctx.adminPassword
                 })
                 .expect(400)
         });
 
         it('Should give error on missing password', async () => {
-            await request(server)
+            await request(ctx.server)
                 .post('/api/auth/login')
                 .send({
-                    email: defaultEmail
+                    email: ctx.adminEmail
                 })
                 .expect(400);
         });
 
         it('Should give error on invalid email format', async () => {
-            await request(server)
+            await request(ctx.server)
                 .post('/api/auth/login')
                 .send({
                     email: 'not-an-email',
-                    password: defaultPassword
+                    password: ctx.adminPassword
                 })
                 .expect(400);
         });
 
         it('Should give error on uppercase email due to lowercase validation', async () => {
-            await request(server)
+            await request(ctx.server)
                 .post('/api/auth/login')
                 .send({
-                    email: defaultEmail.toUpperCase(),
-                    password: defaultPassword
+                    email: ctx.adminEmail?.toUpperCase(),
+                    password: ctx.adminPassword
                 })
                 .expect(400);
         });

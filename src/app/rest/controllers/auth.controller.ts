@@ -7,7 +7,7 @@ import { LoginReqDTO } from '../dto/request/login-req.dto';
 import { LoginResDTO } from '../dto/response/login-res.dto';
 import { LogAround } from '../../common/logger/log-around';
 import { ApiResponse } from '@nestjs/swagger';
-import { GetCurrentUser } from 'src/app/auth/decorators/currentUser.decorator';
+import { GetCurrentUser } from '../../auth/decorators/currentUser.decorator';
 import { User } from '../../user/entities/user.entity';
 
 @Controller('auth')

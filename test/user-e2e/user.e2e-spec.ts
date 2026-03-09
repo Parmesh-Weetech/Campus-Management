@@ -1,4 +1,3 @@
-import { INestApplication } from "@nestjs/common"
 import * as path from 'path';
 import * as fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
@@ -12,21 +11,14 @@ import { DataSource } from "typeorm";
 import { User } from "../../src/app/user/entities/user.entity";
 import { RefreshToken } from "../../src/app/refresh-token/entities/refresh-token.entity";
 import { createTempImage, extractFilename } from "../utils/image-operation";
+import { TestContext } from "../utils/test-context";
 
 const PROJECT_ROOT = path.resolve(__dirname, '..', '..');
 const ABS_PROFILE_PHOTO_DIR = path.resolve(PROJECT_ROOT, PROFILE_PHOTO_FILE_PATH);
 const ABS_PROFILE_THUMBNAIL_DIR = path.resolve(PROJECT_ROOT, PROFILE_THUMBNAIL_FILE_PATH);
 
 describe("UserController (e2e)", () => {
-    let app: INestApplication;
-    let server;
-    let adminResponse: { token: string, id: string };
-    let adminToken: string;
-    let professorToken: string;
-    let studentToken: string;
-    let adminId: string;
-    let professorId: string;
-    let studentId: string;
+    const ctx: TestContext = {};
     let specialNameProfessorId: string;
     let specialNameProfessorToken: string;
     let professorEmail: string;
@@ -43,13 +35,13 @@ describe("UserController (e2e)", () => {
     const uploadedProfileThumbnails: string[] = [];
 
     beforeAll(async () => {
-        app = await defaultBeforeAll();
-        server = app.getHttpServer();
+        ctx.app = await defaultBeforeAll();
+        ctx.server = ctx.app.getHttpServer();
 
         // Login Admin and Getting Admin Token
-        adminResponse = await setupAdminUser(app);
-        adminToken = adminResponse.token;
-        adminId = adminResponse.id;
+        ctx.adminResponse = await setupAdminUser(ctx.app!);
+        ctx.adminToken = ctx.adminResponse.token;
+        ctx.adminId = ctx.adminResponse.id;
 
         newUserName = `testProfessorUser-${randomId}`;
         newUserEmail = `test-professor-user-${randomId}@example.com`;
@@ -59,9 +51,9 @@ describe("UserController (e2e)", () => {
         professorPhoneNumber = newUserPhoneNumber;
 
         // Create Professor
-        const successResponseProfessor = await request(server)
+        const successResponseProfessor = await request(ctx.server)
             .post('/api/user/create/professor')
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${ctx.adminToken}`)
             .send({
                 name: newUserName,
                 email: newUserEmail,
@@ -80,10 +72,10 @@ describe("UserController (e2e)", () => {
         expect(successResponseProfessor.body.data.email).toEqual(newUserEmail);
         expect(successResponseProfessor.body.data.status).toEqual(UserStatus.ACTIVE);
 
-        professorId = successResponseProfessor.body.data.id;
+        ctx.professorId = successResponseProfessor.body.data.id;
 
         // Should get error as invalid token
-        await request(server)
+        await request(ctx.server)
             .post('/api/user/create/professor')
             .set('Authorization', `Bearer randomestringwithnovalue`)
             .send({
@@ -95,8 +87,8 @@ describe("UserController (e2e)", () => {
             .expect(401);
 
         // Login Professor
-        const professorLoginResponse = await setupProfessorUser(app, newUserEmail, newUserPassword);
-        professorToken = professorLoginResponse
+        const professorLoginResponse = await setupProfessorUser(ctx.app!, newUserEmail, newUserPassword);
+        ctx.professorToken = professorLoginResponse
 
         newUserName = `testStudentUser-${randomId}`;
         newUserEmail = `test-student-user-${randomId}@example.com`;
@@ -105,9 +97,9 @@ describe("UserController (e2e)", () => {
         studentPhoneNumber = newUserPhoneNumber;
 
         // Create Student
-        const responseStudent = await request(server)
+        const responseStudent = await request(ctx.server)
             .post('/api/user/create/student')
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${ctx.adminToken}`)
             .send({
                 name: newUserName,
                 email: newUserEmail,
@@ -125,12 +117,12 @@ describe("UserController (e2e)", () => {
         expect(responseStudent.body.data).toHaveProperty('id');
         expect(responseStudent.body.data.email).toBe(newUserEmail);
         expect(responseStudent.body.data.status).toBe(UserStatus.ACTIVE);
-        studentId = responseStudent.body.data.id;
+        ctx.studentId = responseStudent.body.data.id;
 
         // Should get error as professor user cannot create user
-        await request(server)
+        await request(ctx.server)
             .post('/api/user/create/student')
-            .set('Authorization', `Bearer ${professorToken}`)
+            .set('Authorization', `Bearer ${ctx.professorToken}`)
             .send({
                 name: newUserName,
                 email: newUserEmail,
@@ -140,7 +132,7 @@ describe("UserController (e2e)", () => {
             .expect(403);
 
         // Should get error as token in invalid
-        await request(server)
+        await request(ctx.server)
             .post('/api/user/create/student')
             .set('Authorization', `Bearer invalidtokenwithnovalue`)
             .send({
@@ -152,16 +144,16 @@ describe("UserController (e2e)", () => {
             .expect(401);
 
         // 5️⃣ Login student
-        const studentLogin = await setupStudentUser(app, newUserEmail, newUserPassword);
+        const studentLogin = await setupStudentUser(ctx.app!, newUserEmail, newUserPassword);
 
-        studentToken = studentLogin;
+        ctx.studentToken = studentLogin;
 
         const specialNameProfessorEmail = `test-special-professor-user-${randomId}@example.com`;
         const specialNameProfessorPassword = "P27m_09@b0";
 
-        const specialNameCreateResponse = await request(server)
+        const specialNameCreateResponse = await request(ctx.server)
             .post('/api/user/create/professor')
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${ctx.adminToken}`)
             .send({
                 name: '!!!',
                 email: specialNameProfessorEmail,
@@ -171,7 +163,7 @@ describe("UserController (e2e)", () => {
             .expect(201);
         specialNameProfessorId = specialNameCreateResponse.body.data.id;
 
-        const specialNameLoginResponse = await request(server)
+        const specialNameLoginResponse = await request(ctx.server)
             .post('/api/auth/login')
             .send({
                 email: specialNameProfessorEmail,
@@ -203,9 +195,9 @@ describe("UserController (e2e)", () => {
         }
 
         // No API as don't want the soft-delete.
-        const dataSource = app.get(DataSource);
+        const dataSource = ctx.app!.get(DataSource);
         const userRepository = dataSource.getRepository(User);
-        const userIdsToDelete: string[] = [studentId, professorId, specialNameProfessorId].filter((id): id is string => Boolean(id));
+        const userIdsToDelete: string[] = [ctx.studentId, ctx.professorId, specialNameProfessorId].filter((id): id is string => Boolean(id));
 
         if (userIdsToDelete.length > 0) {
             await userRepository.delete(userIdsToDelete);
@@ -227,14 +219,14 @@ describe("UserController (e2e)", () => {
             .from(RefreshToken)
             .execute();
 
-        await app.close();
+        await ctx.app!.close();
     });
 
     describe("User Profile Lifecycle", () => {
         it('Admin can access their own profile', async () => {
-            const response = await request(server)
+            const response = await request(ctx.server)
                 .get('/api/user/profile')
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${ctx.adminToken}`)
                 .expect(200);
 
             expect(response.body).toEqual(
@@ -250,9 +242,9 @@ describe("UserController (e2e)", () => {
         });
 
         it('Professor can access their own profile', async () => {
-            const response = await request(server)
+            const response = await request(ctx.server)
                 .get('/api/user/profile')
-                .set('Authorization', `Bearer ${professorToken}`)
+                .set('Authorization', `Bearer ${ctx.professorToken}`)
                 .expect(200);
 
             expect(response.body).toEqual(
@@ -268,9 +260,9 @@ describe("UserController (e2e)", () => {
         });
 
         it('Student can access their own profile', async () => {
-            const response = await request(server)
+            const response = await request(ctx.server)
                 .get('/api/user/profile')
-                .set('Authorization', `Bearer ${studentToken}`)
+                .set('Authorization', `Bearer ${ctx.studentToken}`)
                 .expect(200);
 
             expect(response.body).toEqual(
@@ -286,20 +278,20 @@ describe("UserController (e2e)", () => {
         });
 
         it('Should return 401 if no token provided', async () => {
-            await request(server)
+            await request(ctx.server)
                 .get('/api/user/profile')
                 .expect(401);
         });
 
         it('Should return 401 for invalid token', async () => {
-            await request(server)
+            await request(ctx.server)
                 .get('/api/user/profile')
                 .set('Authorization', 'Bearer invalidtoken')
                 .expect(401);
         });
 
         it('Should return 401 for invalid authorization format', async () => {
-            await request(server)
+            await request(ctx.server)
                 .get('/api/user/profile')
                 .set('Authorization', 'Basic abc123')
                 .expect(400);
@@ -308,9 +300,9 @@ describe("UserController (e2e)", () => {
 
     describe("User creation conflict and auth checks", () => {
         it('Should give conflict on duplicate professor email', async () => {
-            await request(server)
+            await request(ctx.server)
                 .post('/api/user/create/professor')
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${ctx.adminToken}`)
                 .send({
                     name: `dup-prof-email-${randomId}`,
                     email: professorEmail,
@@ -321,9 +313,9 @@ describe("UserController (e2e)", () => {
         });
 
         it('Should give conflict on duplicate professor phone', async () => {
-            await request(server)
+            await request(ctx.server)
                 .post('/api/user/create/professor')
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${ctx.adminToken}`)
                 .send({
                     name: `dup-prof-phone-${randomId}`,
                     email: `dup-prof-phone-${randomId}@example.com`,
@@ -334,9 +326,9 @@ describe("UserController (e2e)", () => {
         });
 
         it('Should give conflict on duplicate student email', async () => {
-            await request(server)
+            await request(ctx.server)
                 .post('/api/user/create/student')
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${ctx.adminToken}`)
                 .send({
                     name: `dup-student-email-${randomId}`,
                     email: studentEmail,
@@ -347,9 +339,9 @@ describe("UserController (e2e)", () => {
         });
 
         it('Should give conflict on duplicate student phone', async () => {
-            await request(server)
+            await request(ctx.server)
                 .post('/api/user/create/student')
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${ctx.adminToken}`)
                 .send({
                     name: `dup-student-phone-${randomId}`,
                     email: `dup-student-phone-${randomId}@example.com`,
@@ -360,7 +352,7 @@ describe("UserController (e2e)", () => {
         });
 
         it('Should give error on missing token for create professor', async () => {
-            await request(server)
+            await request(ctx.server)
                 .post('/api/user/create/professor')
                 .send({
                     name: `no-token-prof-${randomId}`,
@@ -372,7 +364,7 @@ describe("UserController (e2e)", () => {
         });
 
         it('Should give error on invalid auth format for create student', async () => {
-            await request(server)
+            await request(ctx.server)
                 .post('/api/user/create/student')
                 .set('Authorization', 'Basic abc123')
                 .send({
@@ -387,9 +379,9 @@ describe("UserController (e2e)", () => {
 
     describe("Admin can access Professor and Student both profile", () => {
         it('Admin can access professor profile', async () => {
-            const response = await request(server)
-                .get(`/api/user/profile/${professorId}`)
-                .set('Authorization', `Bearer ${adminToken}`)
+            const response = await request(ctx.server)
+                .get(`/api/user/profile/${ctx.professorId}`)
+                .set('Authorization', `Bearer ${ctx.adminToken}`)
                 .expect(200);
 
             expect(response.body).toEqual(
@@ -401,13 +393,13 @@ describe("UserController (e2e)", () => {
             expect(response.body.data).toHaveProperty('id');
             expect(response.body.data).toHaveProperty('email');
             expect(response.body.data.email).toBeDefined();
-            expect(response.body.data.id).toEqual(professorId);
+            expect(response.body.data.id).toEqual(ctx.professorId);
         });
 
         it('Admin can access student profile', async () => {
-            const response = await request(server)
-                .get(`/api/user/profile/${studentId}`)
-                .set('Authorization', `Bearer ${adminToken}`)
+            const response = await request(ctx.server)
+                .get(`/api/user/profile/${ctx.studentId}`)
+                .set('Authorization', `Bearer ${ctx.adminToken}`)
                 .expect(200);
 
             expect(response.body).toEqual(
@@ -419,22 +411,22 @@ describe("UserController (e2e)", () => {
             expect(response.body.data).toHaveProperty('id');
             expect(response.body.data).toHaveProperty('email');
             expect(response.body.data.email).toBeDefined();
-            expect(response.body.data.id).toEqual(studentId);
+            expect(response.body.data.id).toEqual(ctx.studentId);
         });
 
         it('Should give error on invalid userId format', async () => {
-            await request(server)
+            await request(ctx.server)
                 .get('/api/user/profile/not-a-uuid')
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${ctx.adminToken}`)
                 .expect(400);
         });
     });
 
     describe("Professor can access student profile", () => {
         it('Professor can access student profile', async () => {
-            const response = await request(server)
-                .get(`/api/user/profile/${studentId}`)
-                .set('Authorization', `Bearer ${professorToken}`)
+            const response = await request(ctx.server)
+                .get(`/api/user/profile/${ctx.studentId}`)
+                .set('Authorization', `Bearer ${ctx.professorToken}`)
                 .expect(200);
 
             expect(response.body).toEqual(
@@ -446,31 +438,31 @@ describe("UserController (e2e)", () => {
             expect(response.body.data).toHaveProperty('id');
             expect(response.body.data).toHaveProperty('email');
             expect(response.body.data.email).toBeDefined();
-            expect(response.body.data.id).toEqual(studentId);
+            expect(response.body.data.id).toEqual(ctx.studentId);
         });
     });
 
     describe("Professor cannot access admin profile", () => {
         it('Professor cannot access admin profile', async () => {
-            await request(server)
-                .get(`/api/user/profile/${adminId}`)
-                .set('Authorization', `Bearer ${professorToken}`)
+            await request(ctx.server)
+                .get(`/api/user/profile/${ctx.adminId}`)
+                .set('Authorization', `Bearer ${ctx.professorToken}`)
                 .expect(403);
         });
     });
 
     describe('Student cannot access admin or professor profile', () => {
         it('Student cannot access admin profile', async () => {
-            await request(server)
-                .get(`/api/user/profile/${adminId}`)
-                .set('Authorization', `Bearer ${studentToken}`)
+            await request(ctx.server)
+                .get(`/api/user/profile/${ctx.adminId}`)
+                .set('Authorization', `Bearer ${ctx.studentToken}`)
                 .expect(403);
         });
 
         it('Student cannot access professor profile', async () => {
-            await request(server)
-                .get(`/api/user/profile/${professorId}`)
-                .set('Authorization', `Bearer ${studentToken}`)
+            await request(ctx.server)
+                .get(`/api/user/profile/${ctx.professorId}`)
+                .set('Authorization', `Bearer ${ctx.studentToken}`)
                 .expect(403);
         });
     });
@@ -481,9 +473,9 @@ describe("UserController (e2e)", () => {
             const filePath = createTempImage(tmpDir, 'test-admin', 'dummy-image-content-admin');
             tempFiles.push(filePath);
 
-            const response = await request(server)
+            const response = await request(ctx.server)
                 .post(`/api/user/upload/profile-photo`)
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${ctx.adminToken}`)
                 .attach('file', filePath)
                 .expect(200);
 
@@ -498,9 +490,9 @@ describe("UserController (e2e)", () => {
             const filePath = createTempImage(tmpDir, 'test-professor', 'dummy-image-content-professor');
             tempFiles.push(filePath);
 
-            const response = await request(server)
+            const response = await request(ctx.server)
                 .post(`/api/user/upload/profile-photo`)
-                .set('Authorization', `Bearer ${professorToken}`)
+                .set('Authorization', `Bearer ${ctx.professorToken}`)
                 .attach('file', filePath)
                 .expect(200);
 
@@ -515,9 +507,9 @@ describe("UserController (e2e)", () => {
             const filePath = createTempImage(tmpDir, 'test-student', 'dummy-image-content-student');
             tempFiles.push(filePath);
 
-            const response = await request(server)
+            const response = await request(ctx.server)
                 .post(`/api/user/upload/profile-photo`)
-                .set('Authorization', `Bearer ${studentToken}`)
+                .set('Authorization', `Bearer ${ctx.studentToken}`)
                 .attach('file', filePath)
                 .expect(200);
 
@@ -532,7 +524,7 @@ describe("UserController (e2e)", () => {
             const filePath = createTempImage(tmpDir, 'test-special-name', 'dummy-image-content-special');
             tempFiles.push(filePath);
 
-            const response = await request(server)
+            const response = await request(ctx.server)
                 .post(`/api/user/upload/profile-photo`)
                 .set('Authorization', `Bearer ${specialNameProfessorToken}`)
                 .attach('file', filePath)
@@ -554,9 +546,9 @@ describe("UserController (e2e)", () => {
             fs.writeFileSync(invalidFilePath, 'not-an-image');
             tempFiles.push(invalidFilePath);
 
-            const response = await request(server)
+            const response = await request(ctx.server)
                 .post(`/api/user/upload/profile-photo`)
-                .set('Authorization', `Bearer ${studentToken}`)
+                .set('Authorization', `Bearer ${ctx.studentToken}`)
                 .attach('file', invalidFilePath)
                 .expect(400);
 
@@ -573,7 +565,7 @@ describe("UserController (e2e)", () => {
             const filePath = createTempImage(tmpDir, 'test-student', 'dummy-image-content-student');
             tempFiles.push(filePath);
 
-            await request(server)
+            await request(ctx.server)
                 .post(`/api/user/upload/profile-photo`)
                 .attach('file', filePath)
                 .expect(401)
@@ -584,7 +576,7 @@ describe("UserController (e2e)", () => {
             const filePath = createTempImage(tmpDir, 'test-student', 'dummy-image-content-student');
             tempFiles.push(filePath);
 
-            await request(server)
+            await request(ctx.server)
                 .post(`/api/user/upload/profile-photo`)
                 .set('Authorization', `Bearer invalid.token.withnodata`)
                 .attach('file', filePath)
@@ -596,7 +588,7 @@ describe("UserController (e2e)", () => {
             const filePath = createTempImage(tmpDir, 'test-student', 'dummy-image-content-student');
             tempFiles.push(filePath);
 
-            await request(server)
+            await request(ctx.server)
                 .post(`/api/user/upload/profile-photo`)
                 .set('Authorization', 'Basic abc123')
                 .attach('file', filePath)
@@ -608,9 +600,9 @@ describe("UserController (e2e)", () => {
             const filePath = createTempImage(tmpDir, 'test-student', 'dummy-image-content-student');
             tempFiles.push(filePath);
 
-            await request(server)
+            await request(ctx.server)
                 .post(`/api/user/upload/profile-photo`)
-                .set('Authorization', `Bearer ${studentToken}`)
+                .set('Authorization', `Bearer ${ctx.studentToken}`)
                 .expect(400)
         })
     });
@@ -621,9 +613,9 @@ describe("UserController (e2e)", () => {
             const filePath = createTempImage(tmpDir, 'test-admin', 'dummy-image-content-admin');
             tempFiles.push(filePath);
 
-            const response = await request(server)
+            const response = await request(ctx.server)
                 .post(`/api/user/upload/profile-thumbnail`)
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${ctx.adminToken}`)
                 .attach('file', filePath)
                 .expect(200);
 
@@ -638,9 +630,9 @@ describe("UserController (e2e)", () => {
             const filePath = createTempImage(tmpDir, 'test-professor', 'dummy-image-content-professor');
             tempFiles.push(filePath);
 
-            const response = await request(server)
+            const response = await request(ctx.server)
                 .post(`/api/user/upload/profile-thumbnail`)
-                .set('Authorization', `Bearer ${professorToken}`)
+                .set('Authorization', `Bearer ${ctx.professorToken}`)
                 .attach('file', filePath)
                 .expect(200);
 
@@ -655,9 +647,9 @@ describe("UserController (e2e)", () => {
             const filePath = createTempImage(tmpDir, 'test-student', 'dummy-image-content-student');
             tempFiles.push(filePath);
 
-            const response = await request(server)
+            const response = await request(ctx.server)
                 .post(`/api/user/upload/profile-thumbnail`)
-                .set('Authorization', `Bearer ${studentToken}`)
+                .set('Authorization', `Bearer ${ctx.studentToken}`)
                 .attach('file', filePath)
                 .expect(200);
 
@@ -677,9 +669,9 @@ describe("UserController (e2e)", () => {
             fs.writeFileSync(invalidFilePath, 'not-an-image');
             tempFiles.push(invalidFilePath);
 
-            const response = await request(server)
+            const response = await request(ctx.server)
                 .post(`/api/user/upload/profile-thumbnail`)
-                .set('Authorization', `Bearer ${studentToken}`)
+                .set('Authorization', `Bearer ${ctx.studentToken}`)
                 .attach('file', invalidFilePath)
                 .expect(400);
 
@@ -696,7 +688,7 @@ describe("UserController (e2e)", () => {
             const filePath = createTempImage(tmpDir, 'test-student', 'dummy-image-content-student');
             tempFiles.push(filePath);
 
-            await request(server)
+            await request(ctx.server)
                 .post(`/api/user/upload/profile-thumbnail`)
                 .attach('file', filePath)
                 .expect(401);
@@ -707,7 +699,7 @@ describe("UserController (e2e)", () => {
             const filePath = createTempImage(tmpDir, 'test-student', 'dummy-image-content-student');
             tempFiles.push(filePath);
 
-            await request(server)
+            await request(ctx.server)
                 .post(`/api/user/upload/profile-thumbnail`)
                 .set('Authorization', `Bearer invalid.token.withnodata`)
                 .attach('file', filePath)
@@ -719,7 +711,7 @@ describe("UserController (e2e)", () => {
             const filePath = createTempImage(tmpDir, 'test-student', 'dummy-image-content-student');
             tempFiles.push(filePath);
 
-            await request(server)
+            await request(ctx.server)
                 .post(`/api/user/upload/profile-thumbnail`)
                 .set('Authorization', 'Basic abc123')
                 .attach('file', filePath)
@@ -727,9 +719,9 @@ describe("UserController (e2e)", () => {
         });
 
         it('Should give error on missing file', async () => {
-            await request(server)
+            await request(ctx.server)
                 .post(`/api/user/upload/profile-thumbnail`)
-                .set('Authorization', `Bearer ${studentToken}`)
+                .set('Authorization', `Bearer ${ctx.studentToken}`)
                 .expect(400);
         });
     })
