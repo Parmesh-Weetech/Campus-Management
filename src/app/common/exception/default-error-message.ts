@@ -33,6 +33,10 @@ export const defaultErrorMessages: Record<
         message: 'Resource not found',
         statusCode: 404,
     },
+    [ErrorCode.INVALID_ENCRYPTED_TEXT]: {
+        message: 'Invalid encrypted text',
+        statusCode: 400,
+    },
     [ErrorCode.ENVIRONMENT_VARIABLE_NOT_DEFINED]: {
         message: 'Environment variable is not defined',
         statusCode: 500,

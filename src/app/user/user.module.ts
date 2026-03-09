@@ -6,13 +6,15 @@ import { UserService } from './user.service';
 import { UserReaderService } from './user-reader.service';
 import { UserController } from '../rest/controllers/user.controller';
 import { UserWriterService } from './user-writer.service';
+import { CryptoModule } from '../crypto/crypto.module';
 
 @Module({
     imports: [
         TypeOrmModule.forFeature([User]),
         MulterModule.register({
             limits: { fileSize: 10 * 1024 * 1024 }
-        })
+        }),
+        CryptoModule
     ],
     providers: [UserService, UserReaderService, UserWriterService],
     exports: [UserService],

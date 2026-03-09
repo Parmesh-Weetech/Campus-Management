@@ -6,6 +6,7 @@ export enum ErrorCode {
     INVALID_MONTH_FORMAT = 'request.invalid-month-format',
     INVALID_TIME_UNIT = 'request.invalid-time-unit',
     RESOURCE_NOT_FOUND = 'request.resource-not-found',
+    INVALID_ENCRYPTED_TEXT = 'crypto.invalid-encrypted-text',
 
     ENVIRONMENT_VARIABLE_NOT_DEFINED = 'config.environment-variable-not-defined',
     INVALID_NODE_ENV = 'config.invalid-node-env',
