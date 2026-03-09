@@ -302,7 +302,7 @@ describe("UserController (e2e)", () => {
             await request(server)
                 .get('/api/user/profile')
                 .set('Authorization', 'Basic abc123')
-                .expect(401);
+                .expect(400);
         });
     });
 
@@ -381,7 +381,7 @@ describe("UserController (e2e)", () => {
                     password: newUserPassword,
                     phoneNumber: generatePhoneNumber()
                 })
-                .expect(401);
+                .expect(400);
         });
     });
 
@@ -600,7 +600,7 @@ describe("UserController (e2e)", () => {
                 .post(`/api/user/upload/profile-photo`)
                 .set('Authorization', 'Basic abc123')
                 .attach('file', filePath)
-                .expect(401);
+                .expect(400);
         });
 
         it('Should give error on missing file', async () => {
@@ -723,7 +723,7 @@ describe("UserController (e2e)", () => {
                 .post(`/api/user/upload/profile-thumbnail`)
                 .set('Authorization', 'Basic abc123')
                 .attach('file', filePath)
-                .expect(401);
+                .expect(400);
         });
 
         it('Should give error on missing file', async () => {

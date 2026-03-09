@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { RefreshTokenResDTO } from '../rest/dto/response/refresh-token-res.dto';
 import { RefreshTokenWriterService } from './refresh-token-writer.service';
 import { CustomExceptionFactory } from '../common/exception/custom-exception.factory';
@@ -8,6 +8,7 @@ import { RefreshTokenReaderService } from './refresh-token-reader.service';
 import { JwtService } from '../jwt/jwt.service';
 import { PayLoadType } from '../auth/types/payload.types';
 import { UserService } from '../user/user.service';
+import { DeleteResult } from 'typeorm';
 
 @Injectable()
 export class RefreshTokenService {
@@ -32,7 +33,11 @@ export class RefreshTokenService {
         }
     }
 
-    async refreshAccessToken(refreshToken: string): Promise<LoginResDTO> {
+    async refreshAccessToken(refreshToken?: string): Promise<LoginResDTO> {
+        if (!refreshToken || typeof refreshToken !== "string") {
+            throw CustomExceptionFactory.create(ErrorCode.INVALID_AUTHORIZATION_FORMAT);
+        }
+
         const [type, authorization] = refreshToken.split(" ");
 
         const token = type === "Bearer" ? authorization : undefined;
@@ -55,6 +60,7 @@ export class RefreshTokenService {
         const newRefreshToken = await this.jwtService.signRefreshToken(payload);
 
         const updateRefreshToken = await this.refreshTokenWriterService.updateRefreshToken(token, newRefreshToken, existingUser.data.id);
+        console.log(updateRefreshToken.affected);
         if (updateRefreshToken.affected === null
             || updateRefreshToken.affected === undefined
             || updateRefreshToken.affected === 0
@@ -72,5 +78,9 @@ export class RefreshTokenService {
             message: "Refresh the access token successful.",
             statusCode: 200
         }
+    }
+
+    async deleteToken(userId: string, refreshToken: string): Promise<DeleteResult> {
+        return await this.refreshTokenWriterService.deleteToken(userId, refreshToken);
     }
 }

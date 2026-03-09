@@ -48,6 +48,16 @@ export class AuthService {
         }
     }
 
+    async logout(userId: string, refreshToken: string): Promise<string> {
+        const logoutResponse = await this.refreshTokenService.deleteToken(userId, refreshToken);
+
+        if (logoutResponse.affected === null || logoutResponse.affected === undefined || logoutResponse.affected === 0) {
+            return "Failed to logout! Try again...";
+        }
+
+        return "Logout successful."
+    }
+
     async validateUser(userId: string): Promise<UserResDTO> {
         return await this.userService.findByIdOrThrow(userId);
     }

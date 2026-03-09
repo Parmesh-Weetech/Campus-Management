@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { RefreshToken } from "./entities/refresh-token.entity";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository, UpdateResult } from "typeorm";
+import { DeleteResult, Repository, UpdateResult } from "typeorm";
 
 @Injectable()
 export class RefreshTokenWriterService {
@@ -25,5 +25,12 @@ export class RefreshTokenWriterService {
         }, {
             refreshToken: newRefreshToken
         });
+    }
+
+    async deleteToken(userId: string, refreshToken: string): Promise<DeleteResult> {
+        return await this.refreshTokenRepository.delete({
+            user: { id: userId },
+            refreshToken
+        })
     }
 }

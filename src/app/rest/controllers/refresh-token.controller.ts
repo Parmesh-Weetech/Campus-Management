@@ -10,7 +10,7 @@ export class RefreshTokenController {
     @Public()
     @Post('access-token')
     @HttpCode(HttpStatus.OK)
-    async refreshAccessToken(@Body() body: { refreshToken: string }): Promise<LoginResDTO> {
-        return await this.refreshTokenService.refreshAccessToken(body.refreshToken);
+    async refreshAccessToken(@Body() body?: { refreshToken?: string }): Promise<LoginResDTO> {
+        return await this.refreshTokenService.refreshAccessToken(body?.refreshToken);
     }
 }

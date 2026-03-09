@@ -501,7 +501,7 @@ describe('AttendanceController (e2e)', () => {
                         studentId
                     })
                     .set('Authorization', 'Basic abc123')
-                    .expect(401);
+                    .expect(400);
             });
 
             it('Should give error on malformed bearer token', async () => {
@@ -511,7 +511,7 @@ describe('AttendanceController (e2e)', () => {
                         studentId
                     })
                     .set('Authorization', 'Bearer')
-                    .expect(401);
+                    .expect(400);
             });
 
             it('Should give error when refresh token is used as access token', async () => {

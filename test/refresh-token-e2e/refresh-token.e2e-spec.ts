@@ -45,14 +45,17 @@ describe('RefreshTokenController (e2e)', () => {
         await app.close();
     });
 
+    
     describe('Refresh The Access Token Lifycycle', () => {
         it('Should refresh the access token', async () => {
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
             const response = await request(server)
                 .post('/api/refresh/access-token')
                 .send({
                     refreshToken: `Bearer ${refreshToken}`
                 })
-                .expect(200)
+                .expect(200);
 
             expect(response.body.data).toHaveProperty('accessToken');
             expect(response.body.data).toHaveProperty('refreshToken');
@@ -62,9 +65,9 @@ describe('RefreshTokenController (e2e)', () => {
         });
 
         it('Should give error on missing refresh token', async () => {
-            const response = await request(server)
+            await request(server)
                 .post('/api/refresh/access-token')
-                .expect(500)
+                .expect(400);
         });
 
         it('Should give not found error on invalid refresh token', async () => {
@@ -77,12 +80,21 @@ describe('RefreshTokenController (e2e)', () => {
         });
 
         it('Should give invalid token error on not passing token value', async () => {
-            const response = await request(server)
+            await request(server)
                 .post('/api/refresh/access-token')
                 .send({
                     refreshToken: "Bearer "
                 })
-                .expect(400)
+                .expect(400);
+        });
+
+        it('Should give invalid authorization format for non-bearer token', async () => {
+            await request(server)
+                .post('/api/refresh/access-token')
+                .send({
+                    refreshToken: `Token ${refreshToken}`
+                })
+                .expect(400);
         });
 
         it('Should give not found error on using existing token', async () => {

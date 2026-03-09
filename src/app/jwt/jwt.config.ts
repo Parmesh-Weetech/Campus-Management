@@ -17,8 +17,8 @@ declare global {
 
 export const jwtConfig = registerAs("jwtConfig", () => {
 
-    const accessTokenExpireIn = convertToSeconds(getEnvVal('JWT_ACCESS_TOKEN_EXPIRES_IN', isProd() ? '8h' : (isTest() ? '1s' : '1h')));
-    const refreshTokenExpireIn = convertToSeconds(getEnvVal('JWT_REFRESH_TOKEN_EXPIRES_IN', isProd() ? '30d' : (isTest() ? '1h' : '1d')));
+    const accessTokenExpireIn = convertToSeconds(getEnvVal('JWT_ACCESS_TOKEN_EXPIRES_IN', isProd() ? '8h' : '1h'));
+    const refreshTokenExpireIn = convertToSeconds(getEnvVal('JWT_REFRESH_TOKEN_EXPIRES_IN', isProd() ? '30d' : '1d'));
 
     let privateKey = getEnvVal("JWT_AUTH_PRIVATE_SECRET", '');
     let publicKey = getEnvVal("JWT_AUTH_PUBLIC_SECRET", '');

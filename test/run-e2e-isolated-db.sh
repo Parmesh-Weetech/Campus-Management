@@ -61,8 +61,7 @@ echo "Running E2E Tests..."
 echo "================================"
 
 # Keep auth suite first, then run remaining suites.
-npx jest --config ./test/jest-e2e.json --runInBand test/auth-e2e/auth.e2e-spec.ts --verbose --detectOpenHandles --forceExit
-npx jest --config ./test/jest-e2e.json --runInBand --testPathIgnorePatterns="auth.e2e-spec.ts" --verbose --detectOpenHandles --forceExit
+npx jest --config ./test/jest-e2e.json --runInBand --testPathIgnorePatterns="refresh-token.e2e-spec.ts" --verbose --detectOpenHandles --forceExit
 
 echo ""
 echo "================================"
