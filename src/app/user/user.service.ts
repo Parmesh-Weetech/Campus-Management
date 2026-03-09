@@ -6,16 +6,17 @@ import { UserWriterService } from './user-writer.service';
 import { UserRole } from './types/user-role';
 import { CustomExceptionFactory } from '../common/exception/custom-exception.factory';
 import { ErrorCode } from '../common/exception/error-code';
-import { generateHashPassword } from '../auth/helper/utils';
 import { User } from './entities/user.entity';
 import { canViewTargetProfile } from './helper/utils';
 import { ProfileImageType } from './enum/profile-image-type.enum';
+import { CryptoService } from '../crypto/crypto.service';
 
 @Injectable()
 export class UserService {
     constructor(
         private readonly userReaderService: UserReaderService,
-        private readonly userWriterService: UserWriterService
+        private readonly userWriterService: UserWriterService,
+        private readonly cryptoService: CryptoService
     ) { }
 
     async findByEmailOrThrow(email: string): Promise<UserResDTO> {
@@ -63,9 +64,10 @@ export class UserService {
         const existingUserWithPhone = await this.userReaderService.findByPhone(createUserReqDTO.phoneNumber);
         if (existingUserWithPhone) throw CustomExceptionFactory.create(ErrorCode.USER_ALREADY_EXISTS_WITH_PHONE);
 
-        const hashPassword = await generateHashPassword(createUserReqDTO.password);
+        const decryptedPassword = this.cryptoService.asymmetricDecrypt(createUserReqDTO.password);
+        const hashedPassword = await this.cryptoService.hash(decryptedPassword);
 
-        const createdUser = await this.userWriterService.createUser(createUserReqDTO, hashPassword, role);
+        const createdUser = await this.userWriterService.createUser(createUserReqDTO, hashedPassword, role);
 
         if (!createdUser) throw CustomExceptionFactory.create(ErrorCode.INTERNAL_SERVER_ERROR);
 

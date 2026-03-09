@@ -18,7 +18,7 @@ import { jwtConfig } from './jwt.config';
                 publicKey: fs.readFileSync(getEnvVal("AUTH_PUBLIC_KEY_PATH"), 'utf-8'),
                 signOptions: {
                     algorithm: 'RS256',
-                    issuer: getEnvVal("JWT_ISSUER")
+                    issuer: getEnvVal("JWT_ISSUER"),
                 }
             })
         }),

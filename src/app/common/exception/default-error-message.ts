@@ -33,6 +33,10 @@ export const defaultErrorMessages: Record<
         message: 'Resource not found',
         statusCode: 404,
     },
+    [ErrorCode.INVALID_ENCRYPTED_TEXT]: {
+        message: 'Invalid encrypted text',
+        statusCode: 400,
+    },
     [ErrorCode.ENVIRONMENT_VARIABLE_NOT_DEFINED]: {
         message: 'Environment variable is not defined',
         statusCode: 500,
@@ -53,9 +57,25 @@ export const defaultErrorMessages: Record<
         message: 'Invalid access token',
         statusCode: 401,
     },
+    [ErrorCode.ACCESS_TOKEN_EXPIRED]: {
+        message: 'Access token expired!',
+        statusCode: 401
+    },
+    [ErrorCode.INVALID_REFRESH_TOKEN]: {
+        message: 'Invalid refresh token',
+        statusCode: 401,
+    },
+    [ErrorCode.REFRESH_TOKEN_NOT_FOUND]: {
+        message: 'Refresh Token not found.',
+        statusCode: 404
+    },
+    [ErrorCode.REFRESH_TOKEN_EXPIRED]: {
+        message: 'Refresh Token expired!',
+        statusCode: 401
+    },
     [ErrorCode.INVALID_AUTHORIZATION_FORMAT]: {
         message: 'Invalid authorization format',
-        statusCode: 401,
+        statusCode: 400,
     },
     [ErrorCode.AUTHORIZATION_HEADER_MISSING]: {
         message: 'You must be loggedIn!',

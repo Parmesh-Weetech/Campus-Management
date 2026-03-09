@@ -1,29 +1,37 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { LoginReqDTO } from '../rest/dto/request/login-req.dto';
 import { LoginResDTO } from '../rest/dto/response/login-res.dto';
 import { UserService } from '../user/user.service';
-import { comparePasswords } from './helper/utils';
 import { JwtService } from '../jwt/jwt.service';
 import { PayLoadType } from './types/payload.types';
 import { RefreshTokenService } from '../refresh-token/refresh-token.service';
 import { UserResDTO } from '../rest/dto/response/user-res.dto';
 import { CustomExceptionFactory } from '../common/exception/custom-exception.factory';
 import { ErrorCode } from '../common/exception/error-code';
+import { CryptoService } from '../crypto/crypto.service';
 
 @Injectable()
 export class AuthService {
     constructor(
         private readonly userService: UserService,
         private readonly jwtService: JwtService<PayLoadType>,
-        private readonly refreshTokenService: RefreshTokenService
+        private readonly refreshTokenService: RefreshTokenService,
+        private readonly cryptoService: CryptoService
     ) { }
 
     async login(loginReqDTO: LoginReqDTO): Promise<LoginResDTO> {
         const existingUser = await this.userService.findByEmailOrThrow(loginReqDTO.email);
 
-        const passwordMatch = await comparePasswords(loginReqDTO.password, existingUser.data.password);
+        const decryptedPassword = await this.cryptoService.asymmetricDecrypt(loginReqDTO.password);
 
-        if (!passwordMatch) throw CustomExceptionFactory.create(ErrorCode.INVALID_CREDENTIALS);
+        const isPasswordCorrect = await this.cryptoService.compareHash(
+            existingUser.data.password,
+            decryptedPassword,
+        );
+
+        if (!isPasswordCorrect) {
+            throw CustomExceptionFactory.create(ErrorCode.INVALID_CREDENTIALS);
+        }
 
         const payload: PayLoadType = {
             userId: existingUser.data.id,
@@ -46,6 +54,16 @@ export class AuthService {
             message: "Login Successful",
             statusCode: 200
         }
+    }
+
+    async logout(userId: string, refreshToken: string): Promise<string> {
+        const logoutResponse = await this.refreshTokenService.deleteToken(userId, refreshToken);
+
+        if (logoutResponse.affected === null || logoutResponse.affected === undefined || logoutResponse.affected === 0) {
+            return "Failed to logout! Try again...";
+        }
+
+        return "Logout successful."
     }
 
     async validateUser(userId: string): Promise<UserResDTO> {

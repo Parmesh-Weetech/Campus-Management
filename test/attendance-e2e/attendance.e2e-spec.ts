@@ -1,4 +1,3 @@
-import { INestApplication } from "@nestjs/common"
 import request from 'supertest';
 import { defaultBeforeAll, setupAdminUser, setupProfessorUser, setupStudentUser } from "../utils/commonHooks";
 import { mockProfessor, mockStudent } from "../utils/mock-data";
@@ -10,55 +9,43 @@ import { User } from "../../src/app/user/entities/user.entity";
 import * as path from 'path';
 import * as fs from 'fs';
 import * as jwt from 'jsonwebtoken';
+import { TestContext } from "../utils/test-context";
 
 describe('AttendanceController (e2e)', () => {
-    let server;
-    let app: INestApplication;
-    let adminResponse: { token: string, id: string };
-    let adminToken: string;
-    let professorToken: string;
-    let professorId: string;
-    let studentToken: string;
-    let studentId: string;
-    let professorMockData: { email: string, password: string }
-    let studentMockData: { email: string, password: string }
+    const ctx: TestContext = {};
     let professorRefreshToken: string;
     let expiredProfessorAccessToken: string;
     let notBeforeProfessorAccessToken: string;
 
     let date: string;
-    let adminEntryAttendanceId: string;
-    let professorEntryAttendanceId: string;
-    let adminClassName: string;
-    let professorClassName: string;
 
     beforeAll(async () => {
-        app = await defaultBeforeAll();
-        server = app.getHttpServer();
+        ctx.app = await defaultBeforeAll();
+        ctx.server = ctx.app.getHttpServer();
 
         // Login Admin
-        adminResponse = await setupAdminUser(app);
-        adminToken = adminResponse.token;
+        ctx.adminResponse = await setupAdminUser(ctx.app!);
+        ctx.adminToken = ctx.adminResponse.token;
 
         // Get professor mock data
-        professorMockData = mockProfessor();
+        ctx.professorMockData = mockProfessor();
 
         // Login Professor
-        professorToken = await setupProfessorUser(app, professorMockData.email, professorMockData.password);
-        const professorProfileResponse = await request(server)
+        ctx.professorToken = await setupProfessorUser(ctx.app!, ctx.professorMockData.email, ctx.professorMockData.password);
+        const professorProfileResponse = await request(ctx.server)
             .get('/api/user/profile')
-            .set('Authorization', `Bearer ${professorToken}`)
+            .set('Authorization', `Bearer ${ctx.professorToken}`)
             .expect(200);
 
         expect(professorProfileResponse.body.data).toHaveProperty('id');
         expect(professorProfileResponse.body.data).toHaveProperty('email');
-        professorId = professorProfileResponse.body.data.id;
+        ctx.professorId = professorProfileResponse.body.data.id;
 
-        const professorLoginResponse = await request(server)
+        const professorLoginResponse = await request(ctx.server)
             .post('/api/auth/login')
             .send({
-                email: professorMockData.email,
-                password: professorMockData.password
+                email: ctx.professorMockData.email,
+                password: ctx.professorMockData.password
             })
             .expect(200);
         professorRefreshToken = professorLoginResponse.body.data.refreshToken;
@@ -67,8 +54,8 @@ describe('AttendanceController (e2e)', () => {
         const privateKey = fs.readFileSync(privateKeyPath, 'utf8');
         const issuer = process.env.JWT_ISSUER ?? 'localhost:3000';
         const jwtPayload = {
-            userId: professorId,
-            email: professorMockData.email,
+            userId: ctx.professorId,
+            email: ctx.professorMockData.email,
             userRole: 'PROFESSOR'
         };
 
@@ -86,29 +73,29 @@ describe('AttendanceController (e2e)', () => {
         });
 
         // Get student mock data
-        studentMockData = mockStudent();
+        ctx.studentMockData = mockStudent();
 
         // Login Student
-        studentToken = await setupStudentUser(app, studentMockData.email, studentMockData.password);
-        const studentProfileResponse = await request(server)
+        ctx.studentToken = await setupStudentUser(ctx.app!, ctx.studentMockData.email, ctx.studentMockData.password);
+        const studentProfileResponse = await request(ctx.server)
             .get('/api/user/profile')
-            .set('Authorization', `Bearer ${studentToken}`)
+            .set('Authorization', `Bearer ${ctx.studentToken}`)
             .expect(200);
 
         expect(studentProfileResponse.body.data).toHaveProperty('id');
         expect(studentProfileResponse.body.data).toHaveProperty('email');
-        studentId = studentProfileResponse.body.data.id;
+        ctx.studentId = studentProfileResponse.body.data.id;
 
         date = formatDateAsYYYYMMDD(new Date());
-        adminClassName = `Drawing-${Date.now()}`;
-        professorClassName = `Social-Science-${Date.now()}`;
+        ctx.adminClassName = `Drawing-${Date.now()}`;
+        ctx.professorClassName = `Social-Science-${Date.now()}`;
     });
 
     afterAll(async () => {
-        const dataSource = app.get(DataSource);
+        const dataSource = ctx.app!.get(DataSource);
         const attendanceRepository = dataSource.getRepository(Attendance);
         const userRepository = dataSource.getRepository(User);
-        const attendanceIdsToDelete: string[] = [adminEntryAttendanceId, professorEntryAttendanceId]
+        const attendanceIdsToDelete: string[] = [ctx.adminEntryAttendanceId, ctx.professorEntryAttendanceId]
             .filter((id): id is string => Boolean(id));
 
         if (attendanceIdsToDelete.length > 0) {
@@ -121,12 +108,12 @@ describe('AttendanceController (e2e)', () => {
             .from(RefreshToken)
             .execute();
 
-        const userIdsToDelete: string[] = [studentId, professorId].filter((id): id is string => Boolean(id));
+        const userIdsToDelete: string[] = [ctx.studentId, ctx.professorId].filter((id): id is string => Boolean(id));
         if (userIdsToDelete.length > 0) {
             await userRepository.delete(userIdsToDelete);
         }
 
-        const testEmails = [studentMockData?.email, professorMockData?.email].filter(
+        const testEmails = [ctx.studentMockData?.email, ctx.professorMockData?.email].filter(
             (email): email is string => Boolean(email)
         );
         if (testEmails.length > 0) {
@@ -137,19 +124,19 @@ describe('AttendanceController (e2e)', () => {
                 .execute();
         }
 
-        await app.close();
+        await ctx.app!.close();
     });
 
     describe('Attendance Lifecycle', () => {
         describe('Create Attendance', () => {
             it('Admin should able to create attendance', async () => {
-                const response = await request(server)
-                    .post(`/api/attendance/create/${studentId}`)
-                    .set("Authorization", `Bearer ${adminToken}`)
+                const response = await request(ctx.server)
+                    .post(`/api/attendance/create/${ctx.studentId}`)
+                    .set("Authorization", `Bearer ${ctx.adminToken}`)
                     .send({
                         date,
                         status: "PRESENT",
-                        className: adminClassName
+                        className: ctx.adminClassName
                     })
                     .expect(201);
 
@@ -161,17 +148,17 @@ describe('AttendanceController (e2e)', () => {
                 );
                 expect(response.body.data).toHaveProperty('id');
 
-                adminEntryAttendanceId = response.body.data.id;
+                ctx.adminEntryAttendanceId = response.body.data.id;
             });
 
             it('Professor should able to create attendance', async () => {
-                const response = await request(server)
-                    .post(`/api/attendance/create/${studentId}`)
-                    .set("Authorization", `Bearer ${professorToken}`)
+                const response = await request(ctx.server)
+                    .post(`/api/attendance/create/${ctx.studentId}`)
+                    .set("Authorization", `Bearer ${ctx.professorToken}`)
                     .send({
                         date,
                         status: "PRESENT",
-                        className: professorClassName
+                        className: ctx.professorClassName
                     })
                     .expect(201);
 
@@ -183,72 +170,72 @@ describe('AttendanceController (e2e)', () => {
                 );
                 expect(response.body.data).toHaveProperty('id');
 
-                professorEntryAttendanceId = response.body.data.id;
+                ctx.professorEntryAttendanceId = response.body.data.id;
             });
 
             it('Should give error on student create attendance', async () => {
-                await request(server)
-                    .post(`/api/attendance/create/${studentId}`)
-                    .set('Authorization', `Bearer ${studentToken}`)
+                await request(ctx.server)
+                    .post(`/api/attendance/create/${ctx.studentId}`)
+                    .set('Authorization', `Bearer ${ctx.studentToken}`)
                     .send({
                         date,
                         status: "PRESENT",
-                        className: professorClassName
+                        className: ctx.professorClassName
                     })
                     .expect(403);
             });
 
             it('Should give conflict error on duplicate record', async () => {
-                await request(server)
-                    .post(`/api/attendance/create/${studentId}`)
-                    .set('Authorization', `Bearer ${professorToken}`)
+                await request(ctx.server)
+                    .post(`/api/attendance/create/${ctx.studentId}`)
+                    .set('Authorization', `Bearer ${ctx.professorToken}`)
                     .send({
                         date,
                         status: "PRESENT",
-                        className: professorClassName
+                        className: ctx.professorClassName
                     })
                     .expect(409)
             })
 
             it('Should give error if studentId is not of student', async () => {
-                await request(server)
-                    .post(`/api/attendance/create/${professorId}`)
-                    .set('Authorization', `Bearer ${professorToken}`)
+                await request(ctx.server)
+                    .post(`/api/attendance/create/${ctx.professorId}`)
+                    .set('Authorization', `Bearer ${ctx.professorToken}`)
                     .send({
                         date,
                         status: "PRESENT",
-                        className: professorClassName
+                        className: ctx.professorClassName
                     })
                     .expect(400);
             });
 
             it('Should give error on invalid token', async () => {
-                await request(server)
-                    .post(`/api/attendance/create/${studentId}`)
+                await request(ctx.server)
+                    .post(`/api/attendance/create/${ctx.studentId}`)
                     .set('Authorization', `Bearer nottoken.for.thisrequest`)
                     .send({
                         date,
                         status: "PRESENT",
-                        className: professorClassName
+                        className: ctx.professorClassName
                     })
                     .expect(401);
             });
 
             it('Should give error on no token provided', async () => {
-                await request(server)
-                    .post(`/api/attendance/create/${studentId}`)
+                await request(ctx.server)
+                    .post(`/api/attendance/create/${ctx.studentId}`)
                     .send({
                         date,
                         status: "PRESENT",
-                        className: professorClassName
+                        className: ctx.professorClassName
                     })
                     .expect(401);
             });
 
             it('Should give error on invalid studentId', async () => {
-                await request(server)
+                await request(ctx.server)
                     .post(`/api/attendance/create/not-a-uuid`)
-                    .set('Authorization', `Bearer ${adminToken}`)
+                    .set('Authorization', `Bearer ${ctx.adminToken}`)
                     .send({
                         date,
                         status: "PRESENT",
@@ -260,9 +247,9 @@ describe('AttendanceController (e2e)', () => {
 
         describe('Update Attendance', () => {
             it('Admin should be able to update attendance', async () => {
-                const response = await request(server)
-                    .patch(`/api/attendance/update/${adminEntryAttendanceId}`)
-                    .set('Authorization', `Bearer ${adminToken}`)
+                const response = await request(ctx.server)
+                    .patch(`/api/attendance/update/${ctx.adminEntryAttendanceId}`)
+                    .set('Authorization', `Bearer ${ctx.adminToken}`)
                     .send({
                         status: "ABSENT"
                     })
@@ -275,13 +262,13 @@ describe('AttendanceController (e2e)', () => {
                     })
                 );
                 expect(response.body.data).toHaveProperty('id');
-                expect(response.body.data.id).toEqual(adminEntryAttendanceId);
+                expect(response.body.data.id).toEqual(ctx.adminEntryAttendanceId);
             });
 
             it('Professor should be able to update attendance', async () => {
-                const response = await request(server)
-                    .patch(`/api/attendance/update/${professorEntryAttendanceId}`)
-                    .set('Authorization', `Bearer ${professorToken}`)
+                const response = await request(ctx.server)
+                    .patch(`/api/attendance/update/${ctx.professorEntryAttendanceId}`)
+                    .set('Authorization', `Bearer ${ctx.professorToken}`)
                     .send({
                         status: "ABSENT"
                     })
@@ -294,35 +281,35 @@ describe('AttendanceController (e2e)', () => {
                     })
                 );
                 expect(response.body.data).toHaveProperty('id');
-                expect(response.body.data.id).toEqual(professorEntryAttendanceId);
+                expect(response.body.data.id).toEqual(ctx.professorEntryAttendanceId);
             });
 
             it('Should give conflict error when update creates duplicate combination', async () => {
-                await request(server)
-                    .patch(`/api/attendance/update/${adminEntryAttendanceId}`)
-                    .set('Authorization', `Bearer ${adminToken}`)
+                await request(ctx.server)
+                    .patch(`/api/attendance/update/${ctx.adminEntryAttendanceId}`)
+                    .set('Authorization', `Bearer ${ctx.adminToken}`)
                     .send({
-                        className: professorClassName
+                        className: ctx.professorClassName
                     })
                     .expect(409);
             });
 
             it('Should give error on student update attendance', async () => {
-                await request(server)
-                    .patch(`/api/attendance/update/${professorEntryAttendanceId}`)
-                    .set('Authorization', `Bearer ${studentToken}`)
+                await request(ctx.server)
+                    .patch(`/api/attendance/update/${ctx.professorEntryAttendanceId}`)
+                    .set('Authorization', `Bearer ${ctx.studentToken}`)
                     .send({
                         date,
                         status: "PRESENT",
-                        className: professorClassName
+                        className: ctx.professorClassName
                     })
                     .expect(403);
             });
 
             it('Should give error on missing attendanceId', async () => {
-                await request(server)
+                await request(ctx.server)
                     .patch(`/api/attendance/update/`)
-                    .set('Authorization', `Bearer ${professorToken}`)
+                    .set('Authorization', `Bearer ${ctx.professorToken}`)
                     .send({
                         className: "ABC"
                     })
@@ -330,9 +317,9 @@ describe('AttendanceController (e2e)', () => {
             });
 
             it('Should give error on invalid studentId', async () => {
-                await request(server)
+                await request(ctx.server)
                     .patch(`/api/attendance/update/not-a-uuid`)
-                    .set('Authorization', `Bearer ${professorToken}`)
+                    .set('Authorization', `Bearer ${ctx.professorToken}`)
                     .send({
                         date,
                         status: "PRESENT",
@@ -342,16 +329,16 @@ describe('AttendanceController (e2e)', () => {
             });
 
             it('Should give error on empty payload', async () => {
-                await request(server)
-                    .patch(`/api/attendance/update/${professorEntryAttendanceId}`)
-                    .set('Authorization', `Bearer ${professorToken}`)
+                await request(ctx.server)
+                    .patch(`/api/attendance/update/${ctx.professorEntryAttendanceId}`)
+                    .set('Authorization', `Bearer ${ctx.professorToken}`)
                     .send({})
                     .expect(400);
             });
 
             it('Should give error on invalid token', async () => {
-                await request(server)
-                    .patch(`/api/attendance/update/${professorEntryAttendanceId}`)
+                await request(ctx.server)
+                    .patch(`/api/attendance/update/${ctx.professorEntryAttendanceId}`)
                     .set('Authorization', 'Bearer invalid.token.value')
                     .send({
                         status: "PRESENT"
@@ -360,8 +347,8 @@ describe('AttendanceController (e2e)', () => {
             });
 
             it('Should give error on no token provided', async () => {
-                await request(server)
-                    .patch(`/api/attendance/update/${professorEntryAttendanceId}`)
+                await request(ctx.server)
+                    .patch(`/api/attendance/update/${ctx.professorEntryAttendanceId}`)
                     .send({
                         status: "PRESENT"
                     })
@@ -371,12 +358,12 @@ describe('AttendanceController (e2e)', () => {
 
         describe('List Attendance', () => {
             it('Admin should be able to list attendance based on filters', async () => {
-                const response = await request(server)
+                const response = await request(ctx.server)
                     .get('/api/attendance/list')
                     .query({
-                        studentId
+                        studentId: ctx.studentId
                     })
-                    .set('Authorization', `Bearer ${adminToken}`)
+                    .set('Authorization', `Bearer ${ctx.adminToken}`)
                     .expect(200);
 
                 expect(response.body.data).toEqual(
@@ -392,13 +379,13 @@ describe('AttendanceController (e2e)', () => {
             });
 
             it('Professor should be able to list attendance based on filters', async () => {
-                const response = await request(server)
+                const response = await request(ctx.server)
                     .get('/api/attendance/list')
                     .query({
-                        studentId,
-                        className: professorClassName
+                        studentId: ctx.studentId,
+                        className: ctx.professorClassName
                     })
-                    .set('Authorization', `Bearer ${professorToken}`)
+                    .set('Authorization', `Bearer ${ctx.professorToken}`)
                     .expect(200);
 
                 expect(response.body.data).toEqual(
@@ -414,13 +401,13 @@ describe('AttendanceController (e2e)', () => {
             });
 
             it('Should filter attendance by month', async () => {
-                const response = await request(server)
+                const response = await request(ctx.server)
                     .get('/api/attendance/list')
                     .query({
-                        studentId,
+                        studentId: ctx.studentId,
                         month: date.slice(0, 7)
                     })
-                    .set('Authorization', `Bearer ${adminToken}`)
+                    .set('Authorization', `Bearer ${ctx.adminToken}`)
                     .expect(200);
 
                 expect(response.body.data).toEqual(
@@ -436,109 +423,109 @@ describe('AttendanceController (e2e)', () => {
             });
 
             it('Should give error on invalid month format', async () => {
-                await request(server)
+                await request(ctx.server)
                     .get('/api/attendance/list')
                     .query({
-                        studentId,
+                        studentId: ctx.studentId,
                         month: '2026/03'
                     })
-                    .set('Authorization', `Bearer ${adminToken}`)
+                    .set('Authorization', `Bearer ${ctx.adminToken}`)
                     .expect(400);
             });
 
             it('Should give error on invalid page and size values', async () => {
-                await request(server)
+                await request(ctx.server)
                     .get('/api/attendance/list')
                     .query({
-                        studentId,
+                        studentId: ctx.studentId,
                         page: 0,
                         size: 101
                     })
-                    .set('Authorization', `Bearer ${adminToken}`)
+                    .set('Authorization', `Bearer ${ctx.adminToken}`)
                     .expect(400);
             });
 
             it('Should give error if student try to access it', async () => {
-                await request(server)
+                await request(ctx.server)
                     .get('/api/attendance/list')
                     .query({
-                        studentId
+                        studentId: ctx.studentId
                     })
-                    .set('Authorization', `Bearer ${studentToken}`)
+                    .set('Authorization', `Bearer ${ctx.studentToken}`)
                     .expect(403);
             });
 
             it('Should give error on missing studentId', async () => {
-                await request(server)
+                await request(ctx.server)
                     .get('/api/attendance/list')
-                    .set('Authorization', `Bearer ${professorToken}`)
+                    .set('Authorization', `Bearer ${ctx.professorToken}`)
                     .expect(400);
             });
 
             it('Should give error on invalid token', async () => {
-                await request(server)
+                await request(ctx.server)
                     .get('/api/attendance/list')
                     .query({
-                        studentId
+                        studentId: ctx.studentId
                     })
                     .set('Authorization', 'Bearer invalid.token.value')
                     .expect(401);
             });
 
             it('Should give error on no token provided', async () => {
-                await request(server)
+                await request(ctx.server)
                     .get('/api/attendance/list')
                     .query({
-                        studentId
+                        studentId: ctx.studentId
                     })
                     .expect(401);
             });
 
             it('Should give error on invalid auth format', async () => {
-                await request(server)
+                await request(ctx.server)
                     .get('/api/attendance/list')
                     .query({
-                        studentId
+                        studentId: ctx.studentId
                     })
                     .set('Authorization', 'Basic abc123')
-                    .expect(401);
+                    .expect(400);
             });
 
             it('Should give error on malformed bearer token', async () => {
-                await request(server)
+                await request(ctx.server)
                     .get('/api/attendance/list')
                     .query({
-                        studentId
+                        studentId: ctx.studentId
                     })
                     .set('Authorization', 'Bearer')
-                    .expect(401);
+                    .expect(400);
             });
 
             it('Should give error when refresh token is used as access token', async () => {
-                await request(server)
+                await request(ctx.server)
                     .get('/api/attendance/list')
                     .query({
-                        studentId
+                        studentId: ctx.studentId
                     })
                     .set('Authorization', `Bearer ${professorRefreshToken}`)
                     .expect(401);
             });
 
             it('Should give error on expired access token', async () => {
-                await request(server)
+                await request(ctx.server)
                     .get('/api/attendance/list')
                     .query({
-                        studentId
+                        studentId: ctx.studentId
                     })
                     .set('Authorization', `Bearer ${expiredProfessorAccessToken}`)
                     .expect(401);
             });
 
             it('Should give error on not-before access token', async () => {
-                await request(server)
+                await request(ctx.server)
                     .get('/api/attendance/list')
                     .query({
-                        studentId
+                        studentId: ctx.studentId
                     })
                     .set('Authorization', `Bearer ${notBeforeProfessorAccessToken}`)
                     .expect(401);
@@ -547,13 +534,13 @@ describe('AttendanceController (e2e)', () => {
 
         describe('Get Attendance By Date and Class', () => {
             it('Admin should able to get attendance based on date and class', async () => {
-                const response = await request(server)
-                    .get(`/api/attendance/${studentId}`)
+                const response = await request(ctx.server)
+                    .get(`/api/attendance/${ctx.studentId}`)
                     .query({
                         date,
-                        className: professorClassName
+                        className: ctx.professorClassName
                     })
-                    .set('Authorization', `Bearer ${adminToken}`)
+                    .set('Authorization', `Bearer ${ctx.adminToken}`)
                     .expect(200);
 
                 expect(response.body).toEqual(
@@ -566,13 +553,13 @@ describe('AttendanceController (e2e)', () => {
             });
 
             it('Professor should able to get attendance based on date and class', async () => {
-                const response = await request(server)
-                    .get(`/api/attendance/${studentId}`)
+                const response = await request(ctx.server)
+                    .get(`/api/attendance/${ctx.studentId}`)
                     .query({
                         date,
-                        className: professorClassName
+                        className: ctx.professorClassName
                     })
-                    .set('Authorization', `Bearer ${professorToken}`)
+                    .set('Authorization', `Bearer ${ctx.professorToken}`)
                     .expect(200);
 
                 expect(response.body).toEqual(
@@ -585,44 +572,44 @@ describe('AttendanceController (e2e)', () => {
             });
 
             it('Should give error on student access it', async () => {
-                await request(server)
-                    .get(`/api/attendance/${studentId}`)
+                await request(ctx.server)
+                    .get(`/api/attendance/${ctx.studentId}`)
                     .query({
                         date,
-                        className: professorClassName
+                        className: ctx.professorClassName
                     })
-                    .set('Authorization', `Bearer ${studentToken}`)
+                    .set('Authorization', `Bearer ${ctx.studentToken}`)
                     .expect(403);
             });
 
             it('Should give error on missing className', async () => {
-                await request(server)
-                    .get(`/api/attendance/${studentId}`)
+                await request(ctx.server)
+                    .get(`/api/attendance/${ctx.studentId}`)
                     .query({
                         date
                     })
-                    .set('Authorization', `Bearer ${professorToken}`)
+                    .set('Authorization', `Bearer ${ctx.professorToken}`)
                     .expect(400);
             });
 
             it('Should give error on non-existing record', async () => {
-                await request(server)
-                    .get(`/api/attendance/${studentId}`)
+                await request(ctx.server)
+                    .get(`/api/attendance/${ctx.studentId}`)
                     .query({
                         date: "2026-05-05",
                         className: "ABCD"
                     })
-                    .set('Authorization', `Bearer ${professorToken}`)
+                    .set('Authorization', `Bearer ${ctx.professorToken}`)
                     .expect(404)
             });
 
             it('Should use today date when date is omitted', async () => {
-                const response = await request(server)
-                    .get(`/api/attendance/${studentId}`)
+                const response = await request(ctx.server)
+                    .get(`/api/attendance/${ctx.studentId}`)
                     .query({
-                        className: professorClassName
+                        className: ctx.professorClassName
                     })
-                    .set('Authorization', `Bearer ${professorToken}`)
+                    .set('Authorization', `Bearer ${ctx.professorToken}`)
                     .expect(200);
 
                 expect(response.body).toEqual(
@@ -634,33 +621,33 @@ describe('AttendanceController (e2e)', () => {
             });
 
             it('Should give error on invalid studentId', async () => {
-                await request(server)
+                await request(ctx.server)
                     .get('/api/attendance/not-a-uuid')
                     .query({
                         date,
-                        className: professorClassName
+                        className: ctx.professorClassName
                     })
-                    .set('Authorization', `Bearer ${professorToken}`)
+                    .set('Authorization', `Bearer ${ctx.professorToken}`)
                     .expect(400);
             });
 
             it('Should give error on invalid token', async () => {
-                await request(server)
-                    .get(`/api/attendance/${studentId}`)
+                await request(ctx.server)
+                    .get(`/api/attendance/${ctx.studentId}`)
                     .query({
                         date,
-                        className: professorClassName
+                        className: ctx.professorClassName
                     })
                     .set('Authorization', 'Bearer invalid.token.value')
                     .expect(401);
             });
 
             it('Should give error on no token provided', async () => {
-                await request(server)
-                    .get(`/api/attendance/${studentId}`)
+                await request(ctx.server)
+                    .get(`/api/attendance/${ctx.studentId}`)
                     .query({
                         date,
-                        className: professorClassName
+                        className: ctx.professorClassName
                     })
                     .expect(401);
             });
@@ -668,9 +655,9 @@ describe('AttendanceController (e2e)', () => {
 
         describe('Delete Attendance', () => {
             it('Admin should able to delete attendance', async () => {
-                const response = await request(server)
-                    .delete(`/api/attendance/${adminEntryAttendanceId}`)
-                    .set('Authorization', `Bearer ${adminToken}`)
+                const response = await request(ctx.server)
+                    .delete(`/api/attendance/${ctx.adminEntryAttendanceId}`)
+                    .set('Authorization', `Bearer ${ctx.adminToken}`)
                     .expect(200);
 
                 expect(response.body).toEqual(
@@ -683,9 +670,9 @@ describe('AttendanceController (e2e)', () => {
             });
 
             it('Professor should able to delete attendance', async () => {
-                const response = await request(server)
-                    .delete(`/api/attendance/${professorEntryAttendanceId}`)
-                    .set('Authorization', `Bearer ${professorToken}`)
+                const response = await request(ctx.server)
+                    .delete(`/api/attendance/${ctx.professorEntryAttendanceId}`)
+                    .set('Authorization', `Bearer ${ctx.professorToken}`)
                     .expect(200);
 
                 expect(response.body).toEqual(
@@ -698,43 +685,43 @@ describe('AttendanceController (e2e)', () => {
             });
 
             it('Should give error on student try to delete it', async () => {
-                await request(server)
-                    .delete(`/api/attendance/${professorEntryAttendanceId}`)
-                    .set('Authorization', `Bearer ${studentToken}`)
+                await request(ctx.server)
+                    .delete(`/api/attendance/${ctx.professorEntryAttendanceId}`)
+                    .set('Authorization', `Bearer ${ctx.studentToken}`)
                     .expect(403);
             });
 
             it('Should give error on missing attendanceId', async () => {
-                await request(server)
+                await request(ctx.server)
                     .delete(`/api/attendance/`)
-                    .set('Authorization', `Bearer ${professorToken}`)
+                    .set('Authorization', `Bearer ${ctx.professorToken}`)
                     .expect(404);
             });
 
             it('Should give error on invalid attendanceId', async () => {
-                await request(server)
+                await request(ctx.server)
                     .delete('/api/attendance/not-a-uuid')
-                    .set('Authorization', `Bearer ${adminToken}`)
+                    .set('Authorization', `Bearer ${ctx.adminToken}`)
                     .expect(400);
             });
 
             it('Should give error on invalid token', async () => {
-                await request(server)
-                    .delete(`/api/attendance/${professorEntryAttendanceId}`)
+                await request(ctx.server)
+                    .delete(`/api/attendance/${ctx.professorEntryAttendanceId}`)
                     .set('Authorization', 'Bearer invalid.token.value')
                     .expect(401);
             });
 
             it('Should give error on no token provided', async () => {
-                await request(server)
-                    .delete(`/api/attendance/${professorEntryAttendanceId}`)
+                await request(ctx.server)
+                    .delete(`/api/attendance/${ctx.professorEntryAttendanceId}`)
                     .expect(401);
             });
 
             it('Should give error when record does not exist', async () => {
-                await request(server)
+                await request(ctx.server)
                     .delete('/api/attendance/cf1796ce-5f99-4d06-a5ec-df74a0c1d7f8')
-                    .set('Authorization', `Bearer ${adminToken}`)
+                    .set('Authorization', `Bearer ${ctx.adminToken}`)
                     .expect(404);
             });
         })

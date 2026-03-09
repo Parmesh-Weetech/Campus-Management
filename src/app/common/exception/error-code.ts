@@ -6,6 +6,7 @@ export enum ErrorCode {
     INVALID_MONTH_FORMAT = 'request.invalid-month-format',
     INVALID_TIME_UNIT = 'request.invalid-time-unit',
     RESOURCE_NOT_FOUND = 'request.resource-not-found',
+    INVALID_ENCRYPTED_TEXT = 'crypto.invalid-encrypted-text',
 
     ENVIRONMENT_VARIABLE_NOT_DEFINED = 'config.environment-variable-not-defined',
     INVALID_NODE_ENV = 'config.invalid-node-env',
@@ -13,6 +14,10 @@ export enum ErrorCode {
     UNAUTHORIZED = 'auth.unauthorized',
     INVALID_CREDENTIALS = 'auth.invalid-credentials',
     INVALID_ACCESS_TOKEN = 'auth.invalid-access-token',
+    ACCESS_TOKEN_EXPIRED = 'auth.access-token-expired',
+    INVALID_REFRESH_TOKEN = 'auth.invalid-refresh-token',
+    REFRESH_TOKEN_NOT_FOUND = 'auth.refresh-token-not-found',
+    REFRESH_TOKEN_EXPIRED = 'auth.refresh-token-expired',
     INVALID_AUTHORIZATION_FORMAT = 'auth.invalid-authorization-format',
     AUTHORIZATION_HEADER_MISSING = 'auth.authorization-header-missing',
     USER_NOT_IN_REQUEST = 'auth.user-not-in-request',

@@ -50,13 +50,35 @@ export class JwtService<T extends Object> {
                 error instanceof TokenExpiredError ||
                 error instanceof NotBeforeError
             ) {
-                throw CustomExceptionFactory.create(ErrorCode.INVALID_ACCESS_TOKEN);
+                throw CustomExceptionFactory.create(ErrorCode.ACCESS_TOKEN_EXPIRED);
             }
 
-            throw error;
+            throw CustomExceptionFactory.create(ErrorCode.INVALID_ACCESS_TOKEN);
         }
 
         if (payload.isRefreshToken) throw CustomExceptionFactory.create(ErrorCode.INVALID_ACCESS_TOKEN);
+
+        return payload as T;
+    }
+
+    async validateRefreshToken(refreshToken: string): Promise<T> {
+        let payload: T & { isRefreshToken?: boolean };
+
+        try {
+            payload = await this.jwtService.verify(refreshToken);
+        } catch (error) {
+            if (
+                error instanceof JsonWebTokenError ||
+                error instanceof TokenExpiredError ||
+                error instanceof NotBeforeError
+            ) {
+                throw CustomExceptionFactory.create(ErrorCode.REFRESH_TOKEN_EXPIRED);
+            }
+
+            throw CustomExceptionFactory.create(ErrorCode.INVALID_REFRESH_TOKEN);
+        }
+
+        if (!payload.isRefreshToken) throw CustomExceptionFactory.create(ErrorCode.INVALID_REFRESH_TOKEN);
 
         return payload as T;
     }
