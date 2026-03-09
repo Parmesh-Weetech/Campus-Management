@@ -21,6 +21,7 @@
       "statements": 0
     }
   },
+  "transformIgnorePatterns": ["/node_modules/", "/.vscode/"],
   "coveragePathIgnorePatterns": [
     "src/app/common/utils",
     "src/app/common/helper",
