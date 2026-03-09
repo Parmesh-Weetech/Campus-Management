@@ -1,5 +1,5 @@
 import request from 'supertest';
-import { mockAdmin } from '../auth-e2e/auth-mock-data';
+import { mockAdmin } from '../auth/auth-mock-data';
 import { defaultBeforeAll } from '../utils/commonHooks';
 import { DataSource } from 'typeorm';
 import { RefreshToken } from '../../src/app/refresh-token/entities/refresh-token.entity';
@@ -42,7 +42,7 @@ describe('RefreshTokenController (e2e)', () => {
         await ctx.app!.close();
     });
 
-    
+
     describe('Refresh The Access Token Lifycycle', () => {
         it('Should refresh the access token', async () => {
             await new Promise(resolve => setTimeout(resolve, 2000));
