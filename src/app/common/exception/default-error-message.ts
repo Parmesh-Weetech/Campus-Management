@@ -53,6 +53,22 @@ export const defaultErrorMessages: Record<
         message: 'Invalid access token',
         statusCode: 401,
     },
+    [ErrorCode.ACCESS_TOKEN_EXPIRED]: {
+        message: 'Access token expired!',
+        statusCode: 401
+    },
+    [ErrorCode.INVALID_REFRESH_TOKEN]: {
+        message: 'Invalid refresh token',
+        statusCode: 401,
+    },
+    [ErrorCode.REFRESH_TOKEN_NOT_FOUND]: {
+        message: 'Refresh Token not found.',
+        statusCode: 404
+    },
+    [ErrorCode.REFRESH_TOKEN_EXPIRED]: {
+        message: 'Refresh Token expired!',
+        statusCode: 401
+    },
     [ErrorCode.INVALID_AUTHORIZATION_FORMAT]: {
         message: 'Invalid authorization format',
         statusCode: 401,

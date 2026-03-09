@@ -15,7 +15,7 @@ import { StudentModule } from "../student/student.module";
         JwtModule,
         RefreshTokenModule,
         AttendanceModule,
-        StudentModule
+        StudentModule,
     ],
     providers: [
         {
