@@ -10,7 +10,7 @@ describe('StudentController', () => {
 
     const mockAttendanceService = {
         listAttendance: jest.fn(),
-        getAttendanceByDateAndClass: jest.fn()
+        getAttendanceByStudentDateClass: jest.fn()
     }
 
     beforeEach(async () => {
@@ -41,10 +41,18 @@ describe('StudentController', () => {
                 className: "Maths"
             };
 
+            const listStudentAttendanceRes = {
+                student: '1',
+                recordedBy: '2',
+                date: '2026-03-03',
+                status: "PRESENT",
+                className: "Maths"
+            }
+
             const mockResponse = {
                 success: true,
                 data: {
-                    items: [listStudentAttendanceReq],
+                    items: [listStudentAttendanceRes],
                     page: 1,
                     size: 1,
                     total: 1,
@@ -63,5 +71,39 @@ describe('StudentController', () => {
             expect(result).toEqual(mockResponse);
             expect(attendanceService.listAttendance).toHaveBeenCalledWith(listStudentAttendanceReq, user);
         })
-    })
+    });
+
+    describe('Get Attendance by Date and Class', () => {
+        it('Should call attendance.getClassByDateAndClass and return response', async () => {
+            const user = { id: '1', userRole: "STUDENT" } as User;
+
+            const attendanceByDateAndClassReq = {
+                className: "Maths",
+                date: "2026-03-03"
+            }
+
+            const attendanceRes = {
+                student: '1',
+                recordedBy: '2',
+                date: '2026-03-03',
+                status: "PRESENT",
+                className: "Maths"
+            }
+
+            const mockResponse = {
+                success: true,
+                data: attendanceRes,
+                expired: false,
+                statusCode: 200,
+                message: "List of attendance fetched successfully."
+            }
+
+            mockAttendanceService.getAttendanceByStudentDateClass.mockResolvedValue(mockResponse);
+
+            const result = await studentController.getAttendanceByDateAndClass(attendanceByDateAndClassReq, user);
+
+            expect(result).toEqual(mockResponse);
+            expect(attendanceService.getAttendanceByStudentDateClass).toHaveBeenCalledWith(user.id, attendanceByDateAndClassReq.date, attendanceByDateAndClassReq.className);
+        })
+    });
 });
