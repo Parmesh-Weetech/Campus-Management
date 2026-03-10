@@ -2,8 +2,7 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { StudentController } from "../rest/controllers/student.controller";
 import { AttendanceService } from "../attendance/attendance.service";
 import { User } from "../user/entities/user.entity";
-import { AttendanceListResDTO } from "../rest/dto/response/attendance-list-res.dto";
-import { Attendance } from "../attendance/entities/attendance.entity";
+import { mock } from "node:test";
 
 describe('StudentController', () => {
     let studentController: StudentController;
@@ -38,21 +37,31 @@ describe('StudentController', () => {
             const user = { id: '1', userRole: "STUDENT" } as User;
 
             const listStudentAttendanceReq = {
-                studentId: '1',
-                month: '03-2026'
-            } as Attendance;
+                month: '03-2026',
+                className: "Maths"
+            };
 
-            const mockResponse: AttendanceListResDTO = {
+            const mockResponse = {
                 success: true,
                 data: {
-                    items: listStudentAttendanceReq[],
+                    items: [listStudentAttendanceReq],
                     page: 1,
                     size: 1,
                     total: 1,
                     totalPages: 1,
 
-                }
+                },
+                expired: false,
+                statusCode: 200,
+                message: "List of attendance fetched successfully."
             }
+
+            mockAttendanceService.listAttendance.mockResolvedValue(mockResponse);
+
+            const result = await studentController.listAttendance(listStudentAttendanceReq, user);
+
+            expect(result).toEqual(mockResponse);
+            expect(attendanceService.listAttendance).toHaveBeenCalledWith(listStudentAttendanceReq, user);
         })
     })
 });
