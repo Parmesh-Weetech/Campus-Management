@@ -40,6 +40,9 @@ describe('AuthController', () => {
             };
 
             const mockResponse = {
+                success: true,
+                expired: false,
+                message: "Login Successful",
                 accessToken: 'accessToken',
                 refreshToken: 'refreshToken',
             };
@@ -61,7 +64,7 @@ describe('AuthController', () => {
                 refreshToken: 'refreshToken',
             };
 
-            mockAuthService.logout.mockResolvedValue('Logged out');
+            mockAuthService.logout.mockResolvedValue('Logout Successful.');
 
             const result = await authController.logout(user, body);
 
@@ -70,7 +73,7 @@ describe('AuthController', () => {
                 body.refreshToken,
             );
 
-            expect(result).toBe('Logged out');
+            expect(result).toBe('Logout Successful.');
         });
     });
 

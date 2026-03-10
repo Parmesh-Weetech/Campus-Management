@@ -2,7 +2,7 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { StudentController } from "../rest/controllers/student.controller";
 import { AttendanceService } from "../attendance/attendance.service";
 import { User } from "../user/entities/user.entity";
-import { mock } from "node:test";
+import { UserRole } from "../user/types/user-role";
 
 describe('StudentController', () => {
     let studentController: StudentController;
@@ -34,7 +34,7 @@ describe('StudentController', () => {
 
     describe('List Attendance', () => {
         it('Should call attendanceService.listAttendance and return response', async () => {
-            const user = { id: '1', userRole: "STUDENT" } as User;
+            const user = { id: '1', userRole: UserRole.STUDENT } as User;
 
             const listStudentAttendanceReq = {
                 month: '03-2026',
@@ -74,8 +74,8 @@ describe('StudentController', () => {
     });
 
     describe('Get Attendance by Date and Class', () => {
-        it('Should call attendance.getClassByDateAndClass and return response', async () => {
-            const user = { id: '1', userRole: "STUDENT" } as User;
+        it('Should call attendance.getAttendanceByStudentDateClass and return response', async () => {
+            const user = { id: '1', userRole: UserRole.STUDENT } as User;
 
             const attendanceByDateAndClassReq = {
                 className: "Maths",
