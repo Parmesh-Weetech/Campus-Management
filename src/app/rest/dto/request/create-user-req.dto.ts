@@ -8,5 +8,8 @@ export class CreateUserReqDTO extends OmitType(User, [
     'updatedAt',
     'profilePicture',
     'profilePictureThumbnail',
-    'status'
+    'status',
+    'attendances',
+    'tokens',
+    'userRole'
 ]) { }

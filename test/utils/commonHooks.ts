@@ -3,7 +3,7 @@ import { Test, TestingModule } from "@nestjs/testing";
 import request from 'supertest';
 import { AppModule } from "../../src/app.module";
 import { setupApp } from "../../src/setup-app";
-import { mockAdmin } from "../../test/auth-e2e/auth-mock-data";
+import { mockAdmin } from "../auth/auth-mock-data";
 
 export const defaultBeforeAll = async (): Promise<INestApplication> => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
