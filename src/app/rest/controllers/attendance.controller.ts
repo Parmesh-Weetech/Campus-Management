@@ -11,6 +11,8 @@ import { Role } from "../../auth/decorators/role.decorator";
 import { UserRole } from "../../user/types/user-role";
 import { AttendanceByDateClassReqDTO } from "../dto/request/get-attendance-by-date-class-req.dto";
 import { ApiBearerAuth, ApiParam, ApiResponse, ApiTags } from "@nestjs/swagger";
+import { AttendanceSummaryReqDTO } from "../dto/request/attendance-summary-req.dto";
+import { AttendanceSummaryResDTO } from "../dto/response/attendance-summary-res.dto";
 
 @Controller({ path: 'attendance' })
 @ApiTags('attendance')
@@ -52,6 +54,16 @@ export class AttendanceController {
         @GetCurrentUser() user: User
     ): Promise<AttendanceListResDTO> {
         return await this.attendanceService.listAttendance(listAttendanceReqDTO, user);
+    }
+
+    @Get('summary')
+    @Role(UserRole.ADMIN, UserRole.PROFESSOR, UserRole.STUDENT)
+    @ApiResponse({ status: 200, type: AttendanceSummaryResDTO })
+    async listAttendanceSummary(
+        @Query() attendanceSummaryReqDTO: AttendanceSummaryReqDTO,
+        @GetCurrentUser() user: User
+    ): Promise<AttendanceSummaryResDTO> {
+        return await this.attendanceService.listAttendanceSummary(attendanceSummaryReqDTO, user);
     }
 
     @Get(':studentId')

@@ -11,6 +11,8 @@ import { AttendanceReaderService } from './attendance-reader.service';
 import { UserService } from '../user/user.service';
 import { CustomExceptionFactory } from '../common/exception/custom-exception.factory';
 import { ErrorCode } from '../common/exception/error-code';
+import { AttendanceSummaryReqDTO } from '../rest/dto/request/attendance-summary-req.dto';
+import { AttendanceSummaryResDTO } from '../rest/dto/response/attendance-summary-res.dto';
 
 @Injectable()
 export class AttendanceService {
@@ -163,6 +165,68 @@ export class AttendanceService {
             success: true,
             expired: false,
             message: 'Attendance list fetched successfully.',
+            statusCode: 200,
+            data: {
+                items,
+                total,
+                page,
+                size,
+                totalPages
+            }
+        };
+    }
+
+    async listAttendanceSummary(
+        attendanceSummaryReqDTO: AttendanceSummaryReqDTO,
+        currentUser: User
+    ): Promise<AttendanceSummaryResDTO> {
+        const page = attendanceSummaryReqDTO.page ?? 1;
+        const size = attendanceSummaryReqDTO.size ?? 10;
+
+        const studentId =
+            currentUser.userRole === UserRole.STUDENT
+                ? currentUser.id
+                : attendanceSummaryReqDTO.studentId;
+
+        if (!studentId) throw CustomExceptionFactory.create(ErrorCode.BAD_REQUEST, 'StudentId is required!');
+
+        if (
+            currentUser.userRole === UserRole.STUDENT &&
+            attendanceSummaryReqDTO.studentId &&
+            attendanceSummaryReqDTO.studentId !== currentUser.id
+        ) throw CustomExceptionFactory.create(ErrorCode.ATTENDANCE_STUDENT_SCOPE_VIOLATION);
+
+        let monthStart: string;
+        let monthEnd: string;
+
+        const today = new Date();
+        let year = today.getUTCFullYear();
+        let month = today.getUTCMonth() + 1;
+
+        if (attendanceSummaryReqDTO.month) {
+            const parts = attendanceSummaryReqDTO.month.split('-');
+            year = Number(parts[0]);
+            month = Number(parts[1]);
+        }
+
+        monthStart = new Date(Date.UTC(year, month - 1, 1)).toISOString().slice(0, 10);
+        monthEnd = new Date(Date.UTC(year, month, 1)).toISOString().slice(0, 10);
+
+        const [items, total] = await this.attendanceReaderService.listAttendanceSummary({
+            page,
+            size,
+            studentId,
+            className: attendanceSummaryReqDTO.className,
+            monthStart,
+            monthEnd
+        });
+
+        const totalPages = Math.max(1, Math.ceil(total / size));
+
+        return {
+            success: true,
+            expired: false,
+            message: 'Attendance summary fetched successfully.',
             statusCode: 200,
             data: {
                 items,
