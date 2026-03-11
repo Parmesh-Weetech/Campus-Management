@@ -64,7 +64,7 @@ export class UserService {
         const existingUserWithPhone = await this.userReaderService.findByPhone(createUserReqDTO.phoneNumber);
         if (existingUserWithPhone) throw CustomExceptionFactory.create(ErrorCode.USER_ALREADY_EXISTS_WITH_PHONE);
 
-        const decryptedPassword = this.cryptoService.asymmetricDecrypt(createUserReqDTO.password);
+        const decryptedPassword = await this.cryptoService.asymmetricDecrypt(createUserReqDTO.password);
         const hashedPassword = await this.cryptoService.hash(decryptedPassword);
 
         const createdUser = await this.userWriterService.createUser(createUserReqDTO, hashedPassword, role);

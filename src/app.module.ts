@@ -5,11 +5,13 @@ import * as path from 'path';
 import { environmentConfig, postgresConfig } from './app/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RestModule } from './app/rest/rest.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 const envPath = path.resolve('.env');
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: envPath,
