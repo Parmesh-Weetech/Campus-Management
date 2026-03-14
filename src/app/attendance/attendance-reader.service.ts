@@ -125,7 +125,7 @@ export class AttendanceReaderService {
                 'summary."lateCount" AS "lateCount"',
                 'summary."totalCount" AS "totalCount"'
             ])
-            .from('attendance_summary_mv', 'summary');
+            .from('attendance_summary_view', 'summary');
 
         this.applySummaryFilters(baseQuery, query);
 
@@ -138,7 +138,7 @@ export class AttendanceReaderService {
         const countQuery = this.dataSource
             .createQueryBuilder()
             .select('COUNT(*)', 'count')
-            .from('attendance_summary_mv', 'summary');
+            .from('attendance_summary_view', 'summary');
 
         this.applySummaryFilters(countQuery, query);
 
