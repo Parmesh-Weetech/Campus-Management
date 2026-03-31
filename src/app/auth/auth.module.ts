@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { AuthService } from './auth.service';
+import { AuthService } from './services/auth.service';
 import { AuthController } from '../rest/controllers/auth.controller';
 import { JwtModule } from '../jwt/jwt.module';
 import { UserModule } from '../user/user.module';
@@ -12,4 +12,4 @@ import { CryptoModule } from '../crypto/crypto.module';
   imports: [JwtModule, UserModule, RefreshTokenModule, CryptoModule],
   exports: [AuthService]
 })
-export class AuthModule {}
+export class AuthModule { }

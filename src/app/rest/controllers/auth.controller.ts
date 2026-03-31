@@ -1,7 +1,7 @@
 import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 
 import { Public } from '../../auth/decorators/public.decorator';
-import { AuthService } from '../../auth/auth.service';
+import { AuthService } from '../../auth/services/auth.service';
 
 import { LoginReqDTO } from '../dto/request/login-req.dto';
 import { LoginResDTO } from '../dto/response/login-res.dto';

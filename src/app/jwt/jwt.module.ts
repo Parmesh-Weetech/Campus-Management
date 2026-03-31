@@ -4,7 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import * as fs from 'fs';
 
 import { getEnvVal } from '../common/helper';
-import { JwtService } from './jwt.service';
+import { JwtService } from './services/jwt.service';
 import { jwtConfig } from './jwt.config';
 
 @Module({

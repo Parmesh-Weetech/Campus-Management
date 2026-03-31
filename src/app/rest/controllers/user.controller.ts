@@ -2,7 +2,7 @@ import { Body, Controller, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Post
 import { LogAround } from "../../common/logger/log-around";
 import { CreateUserReqDTO } from "../dto/request/create-user-req.dto";
 import { UserResDTO } from "../dto/response/user-res.dto";
-import { UserService } from "../../user/user.service";
+import { UserService } from "../../user/services/user.service";
 import { UserRole } from "../../user/types/user-role";
 import { Role } from "../../auth/decorators/role.decorator";
 import { GetCurrentUser } from "../../auth/decorators/currentUser.decorator";

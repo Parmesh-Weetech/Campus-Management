@@ -1,9 +1,9 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Attendance } from "./entities/attendance.entity";
+import { Attendance } from "../entities/attendance.entity";
 import { DataSource, Not, ObjectLiteral, Repository, SelectQueryBuilder } from "typeorm";
-import { ListAttendanceQuery } from "./types/listAttendanceQuery.types";
-import { AttendanceSummaryQuery, AttendanceSummaryRow } from "./types/attendanceSummaryQuery.types";
+import { ListAttendanceQuery } from "../types/listAttendanceQuery.types";
+import { AttendanceSummaryQuery, AttendanceSummaryRow } from "../types/attendanceSummaryQuery.types";
 
 @Injectable()
 export class AttendanceReaderService {
