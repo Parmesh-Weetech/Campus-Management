@@ -1,9 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
-import { jwtConfig } from './jwt.config';
+import { jwtConfig } from '../jwt.config';
 import { JwtService as Jwt } from '@nestjs/jwt';
-import { CustomExceptionFactory } from '../common/exception/custom-exception.factory';
-import { ErrorCode } from '../common/exception/error-code';
+import { CustomExceptionFactory } from '../../common/exception/custom-exception.factory';
+import { ErrorCode } from '../../common/exception/error-code';
 import { JsonWebTokenError, NotBeforeError, TokenExpiredError } from 'jsonwebtoken';
 
 @Injectable()

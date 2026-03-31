@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { CryptoService } from './crypto.service';
+import { CryptoService } from './services/crypto.service';
 import { cryptoConfig } from './crypto.config';
 import { CryptoController } from '../rest/controllers/crypto.controller';
 

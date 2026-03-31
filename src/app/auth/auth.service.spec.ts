@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AuthService } from './auth.service';
+import { AuthService } from './services/auth.service';
 import { UserService } from '../user/user.service';
-import { JwtService } from '../jwt/jwt.service';
+import { JwtService } from '../jwt/services/jwt.service';
 import { RefreshTokenService } from '../refresh-token/refresh-token.service';
-import { CryptoService } from '../crypto/crypto.service';
+import { CryptoService } from '../crypto/services/crypto.service';
 import { ErrorCode } from '../common/exception/error-code';
 import { CustomException } from '../common/exception/custom-exception';
 

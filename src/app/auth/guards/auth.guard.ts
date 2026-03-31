@@ -1,9 +1,9 @@
 import { CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { IS_PUBLIC_ROUTE } from "../constants";
-import { JwtService } from "../../jwt/jwt.service";
+import { JwtService } from "../../jwt/services/jwt.service";
 import { PayLoadType } from "../types/payload.types";
-import { AuthService } from "../auth.service";
+import { AuthService } from "../services/auth.service";
 import { CustomExceptionFactory } from "../../common/exception/custom-exception.factory";
 import { ErrorCode } from "../../common/exception/error-code";
 

@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
-import { LoginReqDTO } from '../rest/dto/request/login-req.dto';
-import { LoginResDTO } from '../rest/dto/response/login-res.dto';
-import { UserService } from '../user/user.service';
-import { JwtService } from '../jwt/jwt.service';
-import { PayLoadType } from './types/payload.types';
-import { RefreshTokenService } from '../refresh-token/refresh-token.service';
-import { UserResDTO } from '../rest/dto/response/user-res.dto';
-import { CustomExceptionFactory } from '../common/exception/custom-exception.factory';
-import { ErrorCode } from '../common/exception/error-code';
-import { CryptoService } from '../crypto/crypto.service';
+import { LoginReqDTO } from '../../rest/dto/request/login-req.dto';
+import { LoginResDTO } from '../../rest/dto/response/login-res.dto';
+import { UserService } from '../../user/services/user.service';
+import { JwtService } from '../../jwt/services/jwt.service';
+import { PayLoadType } from '../types/payload.types';
+import { RefreshTokenService } from '../../refresh-token/services/refresh-token.service';
+import { UserResDTO } from '../../rest/dto/response/user-res.dto';
+import { CustomExceptionFactory } from '../../common/exception/custom-exception.factory';
+import { ErrorCode } from '../../common/exception/error-code';
+import { CryptoService } from '../../crypto/services/crypto.service';
 
 @Injectable()
 export class AuthService {

@@ -1,11 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { cryptoConfig } from './crypto.config';
+import { cryptoConfig } from '../crypto.config';
 import { ConfigType } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
-import { LogAround } from '../common/logger/log-around';
-import { ErrorCode } from '../common/exception/error-code';
-import { CustomExceptionFactory } from '../common/exception/custom-exception.factory';
+import { LogAround } from '../../common/logger/log-around';
+import { ErrorCode } from '../../common/exception/error-code';
+import { CustomExceptionFactory } from '../../common/exception/custom-exception.factory';
 
 @Injectable()
 export class CryptoService {

@@ -1,6 +1,6 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { UserController } from "../rest/controllers/user.controller"
-import { UserService } from "./user.service";
+import { UserService } from "./services/user.service";
 import { UserRole } from "./types/user-role";
 import { User } from "./entities/user.entity";
 import { Express } from "express";

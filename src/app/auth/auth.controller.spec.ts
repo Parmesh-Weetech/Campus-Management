@@ -1,5 +1,5 @@
 import { Test, TestingModule } from "@nestjs/testing";
-import { AuthService } from "./auth.service";
+import { AuthService } from "./services/auth.service";
 import { AuthController } from "../rest/controllers/auth.controller"
 import { LoginReqDTO } from "src/app/rest/dto/request/login-req.dto";
 import { User } from "src/app/user/entities/user.entity";

@@ -9,7 +9,7 @@ import { ErrorCode } from '../common/exception/error-code';
 import { User } from './entities/user.entity';
 import { canViewTargetProfile } from './helper/utils';
 import { ProfileImageType } from './enum/profile-image-type.enum';
-import { CryptoService } from '../crypto/crypto.service';
+import { CryptoService } from '../crypto/services/crypto.service';
 
 @Injectable()
 export class UserService {
@@ -49,7 +49,7 @@ export class UserService {
 
     async findUserProfileDetails(userId: string, user: User): Promise<UserResDTO> {
         const targetUser = await this.findByIdOrThrow(userId);
-    
+
         const canView = canViewTargetProfile(user, targetUser.data);
 
         if (!canView) throw CustomExceptionFactory.create(ErrorCode.ROLE_PERMISSION_DENIED);

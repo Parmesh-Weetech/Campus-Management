@@ -2,10 +2,10 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MulterModule } from '@nestjs/platform-express'
 import { User } from './entities/user.entity';
-import { UserService } from './user.service';
-import { UserReaderService } from './user-reader.service';
+import { UserService } from './services/user.service';
+import { UserReaderService } from './services/user-reader.service';
 import { UserController } from '../rest/controllers/user.controller';
-import { UserWriterService } from './user-writer.service';
+import { UserWriterService } from './services/user-writer.service';
 import { CryptoModule } from '../crypto/crypto.module';
 
 @Module({

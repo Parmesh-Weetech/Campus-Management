@@ -5,7 +5,7 @@ import { CustomExceptionFactory } from '../common/exception/custom-exception.fac
 import { ErrorCode } from '../common/exception/error-code';
 import { LoginResDTO } from '../rest/dto/response/login-res.dto';
 import { RefreshTokenReaderService } from './refresh-token-reader.service';
-import { JwtService } from '../jwt/jwt.service';
+import { JwtService } from '../jwt/services/jwt.service';
 import { PayLoadType } from '../auth/types/payload.types';
 import { UserService } from '../user/user.service';
 import { DeleteResult } from 'typeorm';
