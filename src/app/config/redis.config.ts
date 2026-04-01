@@ -22,29 +22,3 @@ export const redisConfig = registerAs('redisConfig', () => {
 
     return config;
 });
-
-export const validateRedisConnection = async (config: RedisConfig): Promise<void> => {
-    const redis = new Redis({
-        host: config.host,
-        port: config.port,
-        password: config.password,
-        db: config.db,
-        connectTimeout: 5000,
-        lazyConnect: true,
-    });
-
-    try {
-        await redis.connect();
-        await redis.ping();
-        console.log('Successfully connected to Redis');
-        await redis.disconnect();
-    } catch (error: unknown) {
-        if (error instanceof Error) {
-            console.error(' Redis connection failed:', error.message);
-            throw new Error(`Redis connection failed: ${error.message}`);
-        } else {
-            console.error(' Redis connection failed:', error);
-            throw new Error('Redis connection failed');
-        }
-    }
-}
