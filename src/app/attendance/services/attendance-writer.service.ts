@@ -1,9 +1,9 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Attendance } from "./entities/attendance.entity";
+import { Attendance } from "../entities/attendance.entity";
 import { Repository } from "typeorm";
-import { CreateAttendanceReqDTO } from "../rest/dto/request/create-attendance-req.dto";
-import { UpdateAttendanceReqDTO } from "../rest/dto/request/update-attendance-req.dto";
+import { CreateAttendanceReqDTO } from "../../rest/dto/request/create-attendance-req.dto";
+import { UpdateAttendanceReqDTO } from "../../rest/dto/request/update-attendance-req.dto";
 
 @Injectable()
 export class AttendanceWriterService {

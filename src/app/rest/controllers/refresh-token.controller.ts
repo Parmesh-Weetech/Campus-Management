@@ -1,5 +1,5 @@
 import { Body, Controller, HttpCode, HttpStatus, Post } from "@nestjs/common";
-import { RefreshTokenService } from "../../refresh-token/refresh-token.service";
+import { RefreshTokenService } from "../../refresh-token/services/refresh-token.service";
 import { Public } from "../../auth/decorators/public.decorator";
 import { LoginResDTO } from "../dto/response/login-res.dto";
 

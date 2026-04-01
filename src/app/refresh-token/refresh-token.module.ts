@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
-import { RefreshTokenService } from './refresh-token.service';
+import { RefreshTokenService } from './services/refresh-token.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RefreshToken } from './entities/refresh-token.entity';
-import { RefreshTokenWriterService } from './refresh-token-writer.service';
+import { RefreshTokenWriterService } from './services/refresh-token-writer.service';
 import { JwtModule } from '../jwt/jwt.module';
 import { UserModule } from '../user/user.module';
-import { RefreshTokenReaderService } from './refresh-token-reader.service';
+import { RefreshTokenReaderService } from './services/refresh-token-reader.service';
 import { RefreshTokenController } from '../rest/controllers/refresh-token.controller';
 
 @Module({

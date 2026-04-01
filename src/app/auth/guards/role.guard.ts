@@ -21,6 +21,7 @@ export class RoleGuard implements CanActivate {
 
         const request = context.switchToHttp().getRequest();
         const user = request.user;
+        
         if (!user || !user.id || !user.userRole) {
             throw CustomExceptionFactory.create(ErrorCode.USER_NOT_IN_REQUEST);
         }

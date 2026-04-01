@@ -3,7 +3,7 @@ import { CreateAttendanceReqDTO } from "../dto/request/create-attendance-req.dto
 import { AttendanceResDTO } from "../dto/response/attendance-res.dto";
 import { GetCurrentUser } from "../../auth/decorators/currentUser.decorator";
 import { User } from "../../user/entities/user.entity";
-import { AttendanceService } from "../../attendance/attendance.service";
+import { AttendanceService } from "../../attendance/services/attendance.service";
 import { ListAttendanceReqDTO } from "../dto/request/list-attendance-req.dto";
 import { AttendanceListResDTO } from "../dto/response/attendance-list-res.dto";
 import { UpdateAttendanceReqDTO } from "../dto/request/update-attendance-req.dto";
@@ -44,6 +44,16 @@ export class AttendanceController {
         @GetCurrentUser() user: User
     ): Promise<AttendanceResDTO> {
         return await this.attendanceService.updateAttendance(updateAttendanceReqDTO, attendanceId, user.id);
+    }
+
+    @Get('get/:attendanceId')
+    @Role(UserRole.ADMIN, UserRole.PROFESSOR)
+    @ApiResponse({ status: 200, type: AttendanceResDTO })
+    @ApiParam({ name: 'attendanceId', type: String })
+    async getAttendanceById(
+        @Param('attendanceId', ParseUUIDPipe) attendanceId: string
+    ): Promise<AttendanceResDTO> {
+        return await this.attendanceService.getAttendanceById(attendanceId);
     }
 
     @Get('list')

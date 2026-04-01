@@ -1,5 +1,5 @@
 import { Controller, Get, Query } from "@nestjs/common";
-import { AttendanceService } from "../../attendance/attendance.service";
+import { AttendanceService } from "../../attendance/services/attendance.service";
 import { GetCurrentUser } from "../../auth/decorators/currentUser.decorator";
 import { Role } from "../../auth/decorators/role.decorator";
 import { User } from "../../user/entities/user.entity";

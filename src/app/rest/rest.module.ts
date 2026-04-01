@@ -8,6 +8,7 @@ import { AuthGuard } from "../auth/guards/auth.guard";
 import { AttendanceModule } from "../attendance/attendance.module";
 import { StudentModule } from "../student/student.module";
 import { CryptoModule } from "../crypto/crypto.module";
+import { RedisModule } from "../redis/redis.module";
 
 @Module({
     imports: [
@@ -17,7 +18,8 @@ import { CryptoModule } from "../crypto/crypto.module";
         RefreshTokenModule,
         AttendanceModule,
         StudentModule,
-        CryptoModule
+        CryptoModule,
+        RedisModule
     ],
     providers: [
         {

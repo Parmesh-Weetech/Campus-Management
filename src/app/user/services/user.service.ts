@@ -1,22 +1,24 @@
 import { Injectable } from '@nestjs/common';
-import { UserResDTO } from '../rest/dto/response/user-res.dto';
+import { UserResDTO } from '../../rest/dto/response/user-res.dto';
 import { UserReaderService } from './user-reader.service';
-import { CreateUserReqDTO } from '../rest/dto/request/create-user-req.dto';
+import { CreateUserReqDTO } from '../../rest/dto/request/create-user-req.dto';
 import { UserWriterService } from './user-writer.service';
-import { UserRole } from './types/user-role';
-import { CustomExceptionFactory } from '../common/exception/custom-exception.factory';
-import { ErrorCode } from '../common/exception/error-code';
-import { User } from './entities/user.entity';
-import { canViewTargetProfile } from './helper/utils';
-import { ProfileImageType } from './enum/profile-image-type.enum';
-import { CryptoService } from '../crypto/services/crypto.service';
+import { UserRole } from '../types/user-role';
+import { CustomExceptionFactory } from '../../common/exception/custom-exception.factory';
+import { ErrorCode } from '../../common/exception/error-code';
+import { User } from '../entities/user.entity';
+import { canViewTargetProfile } from '../helper/utils';
+import { ProfileImageType } from '../enum/profile-image-type.enum';
+import { CryptoService } from '../../crypto/services/crypto.service';
+import { RedisService } from '../../redis/redis.service';
 
 @Injectable()
 export class UserService {
     constructor(
         private readonly userReaderService: UserReaderService,
         private readonly userWriterService: UserWriterService,
-        private readonly cryptoService: CryptoService
+        private readonly cryptoService: CryptoService,
+        private readonly redisService: RedisService
     ) { }
 
     async findByEmailOrThrow(email: string): Promise<UserResDTO> {
@@ -34,9 +36,29 @@ export class UserService {
     }
 
     async findByIdOrThrow(userId: string): Promise<UserResDTO> {
+        // Try to get user data from Redis cache first
+        const cachedUser = await this.redisService.getUserCache(userId);
+        if (cachedUser) {
+            return {
+                success: true,
+                expired: false,
+                data: {
+                    id: cachedUser.userId,
+                    name: cachedUser.name,
+                    email: cachedUser.email,
+                    userRole: cachedUser.userRole
+                } as unknown as User,
+                message: "User found in cache.",
+                statusCode: 200
+            };
+        }
+
         const user = await this.userReaderService.findById(userId);
 
         if (!user) throw CustomExceptionFactory.create(ErrorCode.USER_NOT_FOUND);
+
+        // Cache the user data in Redis for future requests
+        await this.redisService.setUserCache(user.id, user.name, user.email, user.userRole);
 
         return {
             success: true,
@@ -70,6 +92,9 @@ export class UserService {
         const createdUser = await this.userWriterService.createUser(createUserReqDTO, hashedPassword, role);
 
         if (!createdUser) throw CustomExceptionFactory.create(ErrorCode.INTERNAL_SERVER_ERROR);
+
+        // Cache the new user data in Redis
+        await this.redisService.setUserCache(createdUser.id, createdUser.name, createdUser.email, createdUser.userRole);
 
         return {
             success: true,

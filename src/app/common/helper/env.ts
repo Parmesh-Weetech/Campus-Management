@@ -38,6 +38,10 @@ export const getEnvVal = (env: keyof EnvVar, defaultVal?: string): string => {
     return (envVal ?? defaultVal) as string;
 };
 
+export const getOptionalEnvVal = (env: keyof EnvVar): string | undefined => {
+    return process.env[env];
+};
+
 export const getNumericEnvVal = (
     env: keyof EnvVar,
     defaultVal?: number,
