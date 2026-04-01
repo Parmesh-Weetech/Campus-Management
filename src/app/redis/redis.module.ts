@@ -1,7 +1,7 @@
 import { Global, Inject, Module, OnModuleDestroy } from '@nestjs/common';
 import { RedisService } from './redis.service';
 import { ConfigType } from '@nestjs/config';
-import { redisConfig, validateRedisConnection } from '../config/redis.config';
+import { redisConfig } from '../config/redis.config';
 import { REDIS_CONNECTION } from './redis.constant';
 import Redis from 'ioredis';
 
@@ -11,16 +11,20 @@ import Redis from 'ioredis';
     {
       provide: REDIS_CONNECTION,
       useFactory: async (config: ConfigType<typeof redisConfig>) => {
+        const redis = new Redis({
+          host: config.host,
+          port: config.port,
+          password: config.password,
+          db: config.db,
+        });
+
         try {
-          await validateRedisConnection(config);
-          return new Redis({
-            host: config.host,
-            port: config.port,
-            password: config.password,
-            db: config.db,
-          });
+          await redis.ping();
+          console.log('Successfully connected to Redis');
+          return redis;
         } catch (error) {
           console.error('Failed to establish Redis connection:', error);
+          await redis.disconnect();
           throw error;
         }
       },
