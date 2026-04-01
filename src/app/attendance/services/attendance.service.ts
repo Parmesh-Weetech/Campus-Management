@@ -1,26 +1,47 @@
 import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { AttendanceWriterService } from './attendance-writer.service';
-import { CreateAttendanceReqDTO } from '../rest/dto/request/create-attendance-req.dto';
-import { AttendanceResDTO } from '../rest/dto/response/attendance-res.dto';
-import { UpdateAttendanceReqDTO } from '../rest/dto/request/update-attendance-req.dto';
-import { ListAttendanceReqDTO } from '../rest/dto/request/list-attendance-req.dto';
-import { User } from '../user/entities/user.entity';
-import { UserRole } from '../user/types/user-role';
-import { AttendanceListResDTO } from '../rest/dto/response/attendance-list-res.dto';
+import { CreateAttendanceReqDTO } from '../../rest/dto/request/create-attendance-req.dto';
+import { AttendanceResDTO } from '../../rest/dto/response/attendance-res.dto';
+import { UpdateAttendanceReqDTO } from '../../rest/dto/request/update-attendance-req.dto';
+import { ListAttendanceReqDTO } from '../../rest/dto/request/list-attendance-req.dto';
+import { User } from '../../user/entities/user.entity';
+import { UserRole } from '../../user/types/user-role';
+import { AttendanceListResDTO } from '../../rest/dto/response/attendance-list-res.dto';
 import { AttendanceReaderService } from './attendance-reader.service';
-import { UserService } from '../user/user.service';
-import { CustomExceptionFactory } from '../common/exception/custom-exception.factory';
-import { ErrorCode } from '../common/exception/error-code';
-import { AttendanceSummaryReqDTO } from '../rest/dto/request/attendance-summary-req.dto';
-import { AttendanceSummaryResDTO } from '../rest/dto/response/attendance-summary-res.dto';
+import { UserService } from '../../user/services/user.service';
+import { CustomExceptionFactory } from '../../common/exception/custom-exception.factory';
+import { ErrorCode } from '../../common/exception/error-code';
+import { AttendanceSummaryReqDTO } from '../../rest/dto/request/attendance-summary-req.dto';
+import { AttendanceSummaryResDTO } from '../../rest/dto/response/attendance-summary-res.dto';
+import { RedisService } from '../../redis/redis.service';
+import { AttendanceCacheRecord } from '../../redis/types/redis.type';
 
 @Injectable()
 export class AttendanceService {
     constructor(
         private readonly attendanceWriterService: AttendanceWriterService,
         private readonly attendanceReaderService: AttendanceReaderService,
-        private readonly userService: UserService
+        private readonly userService: UserService,
+        private readonly redisService: RedisService
     ) { }
+
+    private resolveMonthRange(month?: string): { monthStart: string; monthEnd: string } {
+        const today = new Date();
+
+        let year = today.getUTCFullYear();
+        let currentMonth = today.getUTCMonth() + 1;
+
+        if (month) {
+            const parts = month.split('-');
+            year = Number(parts[0]);
+            currentMonth = Number(parts[1]);
+        }
+
+        return {
+            monthStart: new Date(Date.UTC(year, currentMonth - 1, 1)).toISOString().slice(0, 10),
+            monthEnd: new Date(Date.UTC(year, currentMonth, 1)).toISOString().slice(0, 10),
+        };
+    }
 
     async createAttendance(
         createAttendanceReqDTO: CreateAttendanceReqDTO,
@@ -55,6 +76,9 @@ export class AttendanceService {
         );
 
         if (!attendance) throw CustomExceptionFactory.create(ErrorCode.ATTENDANCE_CREATE_FAILED);
+
+        await this.redisService.setAttendanceRecordCache(attendance);
+        await this.redisService.clearAttendanceListQueryCache();
 
         return {
             success: true,
@@ -104,6 +128,9 @@ export class AttendanceService {
 
         if (!updatedAttendance) throw CustomExceptionFactory.create(ErrorCode.ATTENDANCE_UPDATE_FAILED);
 
+        await this.redisService.setAttendanceRecordCache(updatedAttendance);
+        await this.redisService.clearAttendanceListQueryCache();
+
         return {
             success: true,
             expired: false,
@@ -133,24 +160,21 @@ export class AttendanceService {
             listAttendanceReqDTO.studentId !== currentUser.id
         ) throw CustomExceptionFactory.create(ErrorCode.ATTENDANCE_STUDENT_SCOPE_VIOLATION);
 
+        const { monthStart, monthEnd } = this.resolveMonthRange(listAttendanceReqDTO.month);
+        const cacheKey = this.redisService.buildAttendanceListQueryCacheKey({
+            studentId,
+            className: listAttendanceReqDTO.className,
+            monthStart,
+            monthEnd,
+            page,
+            size,
+        });
+        const cachedResponse = await this.redisService.getJsonCache<AttendanceListResDTO>(cacheKey);
 
-        let monthStart: string;
-        let monthEnd: string;
-
-        const today = new Date();
-
-        let year = today.getUTCFullYear();
-        let month = today.getUTCMonth() + 1;
-
-        if (listAttendanceReqDTO.month) {
-            const parts = listAttendanceReqDTO.month.split('-');
-            year = Number(parts[0]);
-            month = Number(parts[1]);
+        if (cachedResponse) {
+            return cachedResponse;
         }
 
-        monthStart = new Date(Date.UTC(year, month - 1, 1)).toISOString().slice(0, 10);
-        monthEnd = new Date(Date.UTC(year, month, 1)).toISOString().slice(0, 10);
-        
         const [items, total] = await this.attendanceReaderService.listAttendance({
             page,
             size,
@@ -159,9 +183,10 @@ export class AttendanceService {
             monthStart,
             monthEnd
         });
+
         const totalPages = Math.max(1, Math.ceil(total / size));
 
-        return {
+        const response: AttendanceListResDTO = {
             success: true,
             expired: false,
             message: 'Attendance list fetched successfully.',
@@ -174,6 +199,10 @@ export class AttendanceService {
                 totalPages
             }
         };
+
+        await this.redisService.setAttendanceListQueryCache(cacheKey, response);
+
+        return response;
     }
 
     async listAttendanceSummary(
@@ -238,6 +267,36 @@ export class AttendanceService {
         };
     }
 
+    async getAttendanceById(attendanceId: string): Promise<AttendanceResDTO> {
+        const cachedAttendance = await this.redisService.getJsonCache<AttendanceCacheRecord>(
+            this.redisService.buildEntityCacheKey('attendance', attendanceId)
+        );
+
+        if (cachedAttendance) {
+            return {
+                success: true,
+                expired: false,
+                data: cachedAttendance,
+                message: "Attendance found in cache.",
+                statusCode: 200
+            };
+        }
+
+        const attendance = await this.attendanceReaderService.findByIdWithRelations(attendanceId);
+
+        if (!attendance) throw CustomExceptionFactory.create(ErrorCode.ATTENDANCE_NOT_FOUND);
+
+        await this.redisService.setAttendanceRecordCache(attendance);
+
+        return {
+            success: true,
+            expired: false,
+            data: attendance,
+            message: "Attendance Found.",
+            statusCode: 200
+        };
+    }
+
     async getAttendanceByStudentDateClass(studentId: string, date: string | undefined, className: string): Promise<AttendanceResDTO> {
         if (!date) {
             const newDate = new Date();
@@ -273,6 +332,8 @@ export class AttendanceService {
         if (!existingAttendance) throw CustomExceptionFactory.create(ErrorCode.ATTENDANCE_NOT_FOUND);
 
         await this.attendanceWriterService.deleteAttendance(attendanceId);
+        await this.redisService.deleteAttendanceRecordCache(attendanceId);
+        await this.redisService.clearAttendanceListQueryCache();
 
         return {
             success: true,

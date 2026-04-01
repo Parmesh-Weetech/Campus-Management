@@ -2,6 +2,7 @@ services:
   postgres:
     image: postgres:17
     container_name: demo_backend
+    restart: always
     environment:
       POSTGRES_USER: demo_backend
       POSTGRES_PASSWORD: mypassword

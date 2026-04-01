@@ -1,17 +1,19 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { User } from "./entities/user.entity";
+import { User } from "../entities/user.entity";
 import { Repository } from "typeorm";
-import { CreateUserReqDTO } from "../rest/dto/request/create-user-req.dto";
-import { UserStatus } from "./types/user-status";
-import { UserRole } from "./types/user-role";
-import { ProfileImageType } from "./enum/profile-image-type.enum";
+import { CreateUserReqDTO } from "../../rest/dto/request/create-user-req.dto";
+import { UserStatus } from "../types/user-status";
+import { UserRole } from "../types/user-role";
+import { ProfileImageType } from "../enum/profile-image-type.enum";
+import { RedisService } from "../../redis/redis.service";
 
 @Injectable()
 export class UserWriterService {
     constructor(
         @InjectRepository(User)
-        private readonly userRepository: Repository<User>
+        private readonly userRepository: Repository<User>,
+        private readonly redisService: RedisService
     ) { }
 
     async createUser(createUserReqDTO: CreateUserReqDTO, hashPassword: string, role: UserRole.PROFESSOR | UserRole.STUDENT): Promise<User | null> {

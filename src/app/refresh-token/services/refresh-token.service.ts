@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import { RefreshTokenResDTO } from '../rest/dto/response/refresh-token-res.dto';
+import { RefreshTokenResDTO } from '../../rest/dto/response/refresh-token-res.dto';
 import { RefreshTokenWriterService } from './refresh-token-writer.service';
-import { CustomExceptionFactory } from '../common/exception/custom-exception.factory';
-import { ErrorCode } from '../common/exception/error-code';
-import { LoginResDTO } from '../rest/dto/response/login-res.dto';
+import { CustomExceptionFactory } from '../../common/exception/custom-exception.factory';
+import { ErrorCode } from '../../common/exception/error-code';
+import { LoginResDTO } from '../../rest/dto/response/login-res.dto';
 import { RefreshTokenReaderService } from './refresh-token-reader.service';
-import { JwtService } from '../jwt/services/jwt.service';
-import { PayLoadType } from '../auth/types/payload.types';
-import { UserService } from '../user/user.service';
+import { JwtService } from '../../jwt/services/jwt.service';
+import { PayLoadType } from '../../auth/types/payload.types';
+import { UserService } from '../../user/services/user.service';
 import { DeleteResult } from 'typeorm';
 
 @Injectable()
@@ -60,7 +60,6 @@ export class RefreshTokenService {
         const newRefreshToken = await this.jwtService.signRefreshToken(payload);
 
         const updateRefreshToken = await this.refreshTokenWriterService.updateRefreshToken(token, newRefreshToken, existingUser.data.id);
-        console.log(updateRefreshToken.affected);
         if (updateRefreshToken.affected === null
             || updateRefreshToken.affected === undefined
             || updateRefreshToken.affected === 0

@@ -27,7 +27,6 @@ export class AuthController {
     @LogAround()
     @ApiResponse({ status: 200 })
     async logout(@GetCurrentUser() user: User, @Body() body: { refreshToken: string }): Promise<string> {
-        console.log(user.id);
         return await this.authService.logout(user.id, body.refreshToken)
     }
 }
