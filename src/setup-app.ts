@@ -5,6 +5,7 @@ import { ConfigService } from "@nestjs/config";
 import { DataSource } from "typeorm";
 import { MainSeeder } from "../db/seeders/seeder";
 import { CustomExceptionFilter } from "./app/common/exception/custom-exception.filter";
+import { LoggingInterceptor } from "./app/core/logging/logger.interceptor";
 import 'multer'
 
 export const setupApp = async (app: INestApplication) => {
@@ -32,6 +33,7 @@ export const setupApp = async (app: INestApplication) => {
             transform: true,
         }),
     );
+    app.useGlobalInterceptors(new LoggingInterceptor());
     app.useGlobalFilters(new CustomExceptionFilter());
 
     app.enableCors({
