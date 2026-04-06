@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { UserService } from './user.service';
-import { UserReaderService } from './user-reader.service';
-import { UserWriterService } from './user-writer.service';
+import { UserService } from './services/user.service';
+import { UserReaderService } from './services/user-reader.service';
+import { UserWriterService } from './services/user-writer.service';
 import { CryptoService } from '../crypto/services/crypto.service';
 import { ErrorCode } from '../common/exception/error-code';
 import { CustomException } from '../common/exception/custom-exception';

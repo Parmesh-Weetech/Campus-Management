@@ -1,6 +1,6 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { AttendanceController } from "../rest/controllers/attendance.controller"
-import { AttendanceService } from "./attendance.service";
+import { AttendanceService } from "./services/attendance.service";
 import { User } from "../user/entities/user.entity";
 import { AttendanceStatus } from "./types/attendance-status.types";
 

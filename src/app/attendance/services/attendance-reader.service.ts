@@ -114,49 +114,31 @@ export class AttendanceReaderService {
     async listAttendanceSummary(
         query: AttendanceSummaryQuery
     ): Promise<[AttendanceSummaryRow[], number]> {
-        const baseQuery = this.dataSource
-            .createQueryBuilder()
-            .select([
-                'summary."studentId" AS "studentId"',
-                'summary."className" AS "className"',
-                'summary."month" AS "month"',
-                'summary."presentCount" AS "presentCount"',
-                'summary."absentCount" AS "absentCount"',
-                'summary."lateCount" AS "lateCount"',
-                'summary."totalCount" AS "totalCount"'
-            ])
-            .from('attendance_summary_view', 'summary');
+        const offset = (query.page - 1) * query.size;
+        const limit = query.size;
+        const result = await this.dataSource.query(
+            'SELECT * FROM get_attendance_summary($1, $2, $3, $4, $5, $6)',
+            [
+                query.studentId,
+                query.className ?? null,
+                query.monthStart,
+                query.monthEnd,
+                offset,
+                limit
+            ]
+        );
 
-        this.applySummaryFilters(baseQuery, query);
-
-        baseQuery
-            .orderBy('summary."month"', 'DESC')
-            .addOrderBy('summary."className"', 'ASC')
-            .skip((query.page - 1) * query.size)
-            .take(query.size);
-
-        const countQuery = this.dataSource
-            .createQueryBuilder()
-            .select('COUNT(*)', 'count')
-            .from('attendance_summary_view', 'summary');
-
-        this.applySummaryFilters(countQuery, query);
-
-        const [rawItems, countResult] = await Promise.all([
-            baseQuery.getRawMany<AttendanceSummaryRow>(),
-            countQuery.getRawOne<{ count: string }>()
-        ]);
-
-        const items = rawItems.map((item) => ({
-            ...item,
-            presentCount: Number(item.presentCount),
-            absentCount: Number(item.absentCount),
-            lateCount: Number(item.lateCount),
-            totalCount: Number(item.totalCount)
+        const items = result.map((item: any) => ({
+            studentId: item.studentid,
+            className: item.classname,
+            month: item.month,
+            presentCount: Number(item.presentcount),
+            absentCount: Number(item.absentcount),
+            lateCount: Number(item.latecount),
+            totalCount: Number(item.totalcount)
         }));
 
-        const total = countResult ? Number(countResult.count) : 0;
-
+        const total = items.length;
         return [items, total];
     }
 
