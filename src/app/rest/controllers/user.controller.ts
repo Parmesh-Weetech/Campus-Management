@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Post, UploadedFile, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Post, UploadedFile, UseInterceptors, Version } from "@nestjs/common";
 import { LogAround } from "../../common/logger/log-around";
 import { CreateUserReqDTO } from "../dto/request/create-user-req.dto";
 import { UserResDTO } from "../dto/response/user-res.dto";
@@ -41,11 +41,40 @@ export class UserController {
     }
 
     @Get('profile')
+    @Version('1')
     @Role(UserRole.ADMIN, UserRole.PROFESSOR, UserRole.STUDENT)
     @LogAround()
     @ApiResponse({ status: 200, type: UserResDTO })
-    async findProfileDetails(@GetCurrentUser() user: User): Promise<UserResDTO> {
-        return await this.userService.findByIdOrThrow(user.id);
+    async findProfileDetails(
+        @GetCurrentUser() user: User
+    ): Promise<UserResDTO> {
+        return {
+            statusCode: 200,
+            success: true,
+            data: user,
+            message: "User profile retrieved successfully.",
+            expired: false
+        }
+    }
+
+    @Get('profile')
+    @Version('2')
+    @Role(UserRole.ADMIN, UserRole.PROFESSOR, UserRole.STUDENT)
+    @LogAround()
+    @ApiResponse({ status: 200, type: UserResDTO })
+    async findProfile(@GetCurrentUser() user: User): Promise<UserResDTO> {
+        return {
+            statusCode: 200,
+            success: true,
+            data: {
+                id: user.id + ' version 2',
+                name: user.name,
+                email: user.email,
+                userRole: user.userRole
+            } as unknown as User,
+            message: "User profile retrieved successfully.",
+            expired: false
+        }
     }
 
     @Get('profile/:userId')

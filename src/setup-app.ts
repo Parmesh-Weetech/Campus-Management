@@ -1,4 +1,4 @@
-import { INestApplication, ValidationPipe } from "@nestjs/common";
+import { INestApplication, ValidationPipe, VersioningType } from "@nestjs/common";
 import { isProd } from "./app/common/helper";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { ConfigService } from "@nestjs/config";
@@ -13,6 +13,14 @@ export const setupApp = async (app: INestApplication) => {
 
     const globalPrefix = 'api';
     app.setGlobalPrefix(globalPrefix, { exclude: ['u/:shortUrl'] });
+
+    /* ------------------- API VERSIONING ----------------- */
+    const apiVersion = configService.get("API_VERSION") || "v1";
+    app.enableVersioning({
+        type: VersioningType.URI,
+        defaultVersion: apiVersion,
+        prefix: 'v'
+    });
 
     /* -------------------- DB SEEDING -------------------- */
     if (configService.get("AUTO_SEED")) {
