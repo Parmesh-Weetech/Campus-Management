@@ -70,7 +70,7 @@ export class UserController {
     @Role(UserRole.ADMIN, UserRole.PROFESSOR, UserRole.STUDENT)
     @LogAround()
     @ApiResponse({ status: 200, type: UserResDTO })
-    async findProfile(@GetCurrentUser() user: User): Promise<UserResDTO> {
+    async findProfileV2(@GetCurrentUser() user: User): Promise<UserResDTO> {
         return {
             statusCode: 200,
             success: true,
