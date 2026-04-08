@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Post, UploadedFile, UseInterceptors, Version } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Post, UploadedFile, UseInterceptors, Version, VERSION_NEUTRAL } from "@nestjs/common";
 import { LogAround } from "../../common/logger/log-around";
 import { CreateUserReqDTO } from "../dto/request/create-user-req.dto";
 import { UserResDTO } from "../dto/response/user-res.dto";
@@ -16,7 +16,7 @@ import { AllowedMimeType } from "../../user/enum/image-type.enum";
 import { CustomExceptionFactory } from "../../common/exception/custom-exception.factory";
 import { ErrorCode } from "../../common/exception/error-code";
 
-@Controller({ path: 'user' })
+@Controller({ path: 'user', version: '1' })
 @ApiTags('user')
 @ApiBearerAuth()
 export class UserController {
@@ -41,17 +41,25 @@ export class UserController {
     }
 
     @Get('profile')
-    @Version('1')
     @Role(UserRole.ADMIN, UserRole.PROFESSOR, UserRole.STUDENT)
     @LogAround()
     @ApiResponse({ status: 200, type: UserResDTO })
     async findProfileDetails(
         @GetCurrentUser() user: User
-    ): Promise<UserResDTO> {
+    ): Promise<any> {
+        const firstName = user.name.split(' ')[0];
+        const lastName = user.name.split(' ').slice(1).join(' ');
+
         return {
             statusCode: 200,
             success: true,
-            data: user,
+            data: {
+                id: user.id,
+                email: user.email,
+                firstName: firstName,
+                lastName: (lastName === '' || lastName === firstName) ? null : lastName,
+                userRole: user.userRole,
+            },
             message: "User profile retrieved successfully.",
             expired: false
         }
@@ -66,18 +74,14 @@ export class UserController {
         return {
             statusCode: 200,
             success: true,
-            data: {
-                id: user.id + ' version 2',
-                name: user.name,
-                email: user.email,
-                userRole: user.userRole
-            } as unknown as User,
+            data: user,
             message: "User profile retrieved successfully.",
             expired: false
         }
     }
 
     @Get('profile/:userId')
+    @Version(VERSION_NEUTRAL)
     @Role(UserRole.ADMIN, UserRole.PROFESSOR)
     @LogAround()
     @ApiResponse({ status: 200, type: UserResDTO })
