@@ -14,7 +14,7 @@ import { ApiBearerAuth, ApiParam, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { AttendanceSummaryReqDTO } from "../dto/request/attendance-summary-req.dto";
 import { AttendanceSummaryResDTO } from "../dto/response/attendance-summary-res.dto";
 
-@Controller({ path: 'attendance' })
+@Controller({ path: 'attendance', version: '1' })
 @ApiTags('attendance')
 @ApiBearerAuth()
 export class AttendanceController {

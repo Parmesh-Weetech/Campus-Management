@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from "@nestjs/common";
+import { Body, Controller, Post, VERSION_NEUTRAL } from "@nestjs/common";
 import { ApiOperation, ApiResponse } from "@nestjs/swagger";
 import { Public } from "../../auth/decorators/public.decorator";
 import { AsymmetricDecryptReqDto } from "../dto/request/crypto-req.dto";
@@ -6,7 +6,7 @@ import { CryptoService } from "../../crypto/services/crypto.service";
 import { isProd } from "../../common/helper";
 import { AsymmetricEncryptResDto } from "../dto/response/crypto-res.dto";
 
-@Controller({ path: 'crypto' })
+@Controller({ path: 'crypto', version: VERSION_NEUTRAL })
 export class CryptoController {
     constructor(private readonly cryptoService: CryptoService) { }
 

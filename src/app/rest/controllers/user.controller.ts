@@ -80,7 +80,6 @@ export class UserController {
     }
 
     @Get('profile/:userId')
-    @Version(VERSION_NEUTRAL)
     @Role(UserRole.ADMIN, UserRole.PROFESSOR)
     @LogAround()
     @ApiResponse({ status: 200, type: UserResDTO })

@@ -10,7 +10,7 @@ import { AttendanceResDTO } from "../dto/response/attendance-res.dto";
 import { AttendanceByDateClassReqDTO } from "../dto/request/get-attendance-by-date-class-req.dto";
 import { ApiBearerAuth, ApiResponse, ApiTags } from "@nestjs/swagger";
 
-@Controller({ path: 'student' })
+@Controller({ path: 'student', version: '1' })
 @ApiTags('student')
 @ApiBearerAuth()
 export class StudentController {

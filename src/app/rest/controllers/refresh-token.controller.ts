@@ -3,7 +3,7 @@ import { RefreshTokenService } from "../../refresh-token/services/refresh-token.
 import { Public } from "../../auth/decorators/public.decorator";
 import { LoginResDTO } from "../dto/response/login-res.dto";
 
-@Controller({ path: 'refresh' })
+@Controller({ path: 'refresh', version: '1' })
 export class RefreshTokenController {
     constructor(private readonly refreshTokenService: RefreshTokenService) { }
 

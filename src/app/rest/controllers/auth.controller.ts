@@ -10,7 +10,7 @@ import { ApiResponse } from '@nestjs/swagger';
 import { GetCurrentUser } from '../../auth/decorators/currentUser.decorator';
 import { User } from '../../user/entities/user.entity';
 
-@Controller('auth')
+@Controller({ path: 'auth', version: '1' })
 export class AuthController {
 
     constructor(private readonly authService: AuthService) { }
