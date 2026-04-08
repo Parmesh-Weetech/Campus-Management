@@ -10,7 +10,7 @@ export const canViewTargetProfile = (
     }
 
     if (currentUser.userRole === UserRole.PROFESSOR) {
-        return targetUser.userRole === UserRole.STUDENT;
+        return targetUser.userRole === UserRole.STUDENT || targetUser.userRole === UserRole.PROFESSOR;
     }
 
     return false;

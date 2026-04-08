@@ -40,8 +40,8 @@ export class UserController {
         return await this.userService.createUser(createUserReqDTO, UserRole.STUDENT);
     }
 
+    // For next three routes, applying versioning to demonstrate how to handle different versions of the same endpoint
     @Get('profile')
-    @Role(UserRole.ADMIN, UserRole.PROFESSOR, UserRole.STUDENT)
     @LogAround()
     @ApiResponse({ status: 200, type: UserResDTO })
     async findProfileDetails(
@@ -50,15 +50,15 @@ export class UserController {
         const firstName = user.name.split(' ')[0];
         const lastName = user.name.split(' ').slice(1).join(' ');
 
+        const { name, ...rest } = user;
+
         return {
             statusCode: 200,
             success: true,
             data: {
-                id: user.id,
-                email: user.email,
                 firstName: firstName,
                 lastName: (lastName === '' || lastName === firstName) ? null : lastName,
-                userRole: user.userRole,
+                ...rest
             },
             message: "User profile retrieved successfully.",
             expired: false
@@ -67,7 +67,6 @@ export class UserController {
 
     @Get('profile')
     @Version('2')
-    @Role(UserRole.ADMIN, UserRole.PROFESSOR, UserRole.STUDENT)
     @LogAround()
     @ApiResponse({ status: 200, type: UserResDTO })
     async findProfileV2(@GetCurrentUser() user: User): Promise<UserResDTO> {
