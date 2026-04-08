@@ -1,9 +1,9 @@
 import { DiskHealthIndicator, HealthCheckService, HealthIndicatorService, MemoryHealthIndicator, TypeOrmHealthIndicator } from '@nestjs/terminus';
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, VERSION_NEUTRAL } from '@nestjs/common';
 import { Public } from '../../../auth/decorators/public.decorator';
 import { RedisService } from '../../../redis/redis.service';
 
-@Controller('health')
+@Controller({ path: 'health', version: VERSION_NEUTRAL })
 export class HealthController {
 
     constructor(
@@ -14,7 +14,7 @@ export class HealthController {
         private readonly memory: MemoryHealthIndicator,
         private readonly disk: DiskHealthIndicator,
     ) {
-        
+
     }
     @Get()
     @Public()
