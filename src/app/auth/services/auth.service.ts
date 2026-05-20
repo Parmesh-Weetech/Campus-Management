@@ -20,12 +20,12 @@ export class AuthService {
     ) { }
 
     async login(loginReqDTO: LoginReqDTO): Promise<LoginResDTO> {
-        const existingUser = await this.userService.findByEmailOrThrow(loginReqDTO.email);
+        const existingUser = await this.userService.findByEmailWithPasswordOrThrow(loginReqDTO.email);
 
         const decryptedPassword = await this.cryptoService.asymmetricDecrypt(loginReqDTO.password);
 
         const isPasswordCorrect = await this.cryptoService.compareHash(
-            existingUser.data.password,
+            existingUser.password,
             decryptedPassword,
         );
 
@@ -34,15 +34,15 @@ export class AuthService {
         }
 
         const payload: PayLoadType = {
-            userId: existingUser.data.id,
-            email: existingUser.data.email,
-            userRole: existingUser.data.userRole
+            userId: existingUser.id,
+            email: existingUser.email,
+            userRole: existingUser.userRole
         }
 
         const accessToken = await this.jwtService.signAccessToken(payload);
         const refreshToken = await this.jwtService.signRefreshToken(payload);
 
-        await this.refreshTokenService.saveRefreshToken(refreshToken, existingUser.data.id);
+        await this.refreshTokenService.saveRefreshToken(refreshToken, existingUser.id);
 
         return {
             success: true,

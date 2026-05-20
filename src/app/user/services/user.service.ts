@@ -35,6 +35,14 @@ export class UserService {
         };
     }
 
+    async findByEmailWithPasswordOrThrow(email: string): Promise<User> {
+        const user = await this.userReaderService.findByEmail(email);
+
+        if (!user) throw CustomExceptionFactory.create(ErrorCode.USER_NOT_FOUND);
+
+        return user;
+    }
+
     async findByIdOrThrow(userId: string): Promise<UserResDTO> {
         // Try to get user data from Redis cache first
         const cachedUser = await this.redisService.getUserCache(userId);
